@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+
+# macOS
+.DS_Store
+
+# Environment variables
+.env
+
+# Database
+db.sqlite3
+
+# Static & Media (ローカル開発用)
+media/
+staticfiles/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Migrations (※今回は残すのでコメントアウト)
+# */migrations/*
+# !*/migrations/__init__.py
