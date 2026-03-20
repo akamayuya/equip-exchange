@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>商品編集</h2>
+
+<!-- 同じ注意を表示 -->
+<div class="alert alert-info">
+    建物名・部屋番号はジオコーディングに含めないため、別欄に入力してください（表示用には残ります）。
+</div>
+
+<form method="post" enctype="multipart/form-data">
+
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-primary">
+        更新する
+    </button>
+
+</form>
+
+{% endblock %}

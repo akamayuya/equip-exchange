@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{ product.name }}</h2>
+
+{% for image in product.images.all %}
+
+<img src="{{ image.image.url }}" class="img-fluid mb-3">
+
+{% endfor %}
+
+<p>{{ product.description }}</p>
+
+<p>価格: {{ product.price }} 円</p>
+
+<p>出品者: {{ product.seller }}</p>
+
+{% if request.user == product.seller %}
+
+<a href="{% url 'product_edit' product.id %}" class="btn btn-warning">
+    編集
+</a>
+
+<a href="{% url 'product_delete' product.id %}" class="btn btn-danger">
+    削除
+</a>
+
+{% endif %}
+
+<a href="/products/" class="btn btn-secondary">
+    一覧に戻る
+</a>
+
+{% endblock %}

@@ -1,9 +1,35 @@
-<h1>商品一覧</h1>
-<a href="/products/create/">商品を出品</a>
-<ul>
-    {% for product in products %}
-    <li>
-        {{ product.name }} - {{ product.price }}円
-    </li>
-    {% endfor %}
-</ul>
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 class="mb-4">商品一覧</h1>
+
+<a href="/products/create/" class="btn btn-primary mb-3">
+    商品を出品
+</a>
+
+<a href="{% url 'product_map' %}" class="btn btn-primary">
+    地図で探す
+</a>
+
+{% for product in products %}
+
+<div class="card mb-3">
+    <div class="card-body">
+
+        <h5 class="card-title">
+            <a href="/products/{{ product.id }}/">
+                {{ product.name }}
+            </a>
+        </h5>
+
+        <p class="card-text">
+            {{ product.price }} 円
+        </p>
+
+    </div>
+</div>
+
+{% endfor %}
+
+{% endblock %}

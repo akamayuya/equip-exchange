@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="d-flex align-items-center mb-3">
+
+    <h2 class="me-3">機材マップ</h2>
+
+    <a href="{% url 'product_list' %}" class="btn btn-secondary ms-auto">
+        一覧に戻る
+    </a>
+
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<div id="map" style="height:600px;"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+var map = L.map('map').setView([35.681236, 139.767125], 10);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+
+// Django → JS データ変換（null 安全に出力）
+var products = [
+{% for p in products %}
+{
+    name: "{{ p.name|escapejs }}",
+    lat: {{ p.latitude|default_if_none:"null" }},
+    lng: {{ p.longitude|default_if_none:"null" }},
+    address: "{{ p.geocode_address|escapejs }}",
+    url: "{% url 'product_detail' p.id %}"
+}{% if not forloop.last %},{% endif %}
+{% endfor %}
+];
+
+// デバッグ
+console.log("products for map:", products);
+
+// ピン表示
+products.forEach(function(product){
+
+    // 厳密な null チェック（0 を許容、文字列 "null" を回避）
+    if (product.lat !== null && product.lng !== null) {
+
+        // 数値として扱う（テンプレートからは数値または null が来る想定）
+        var lat = Number(product.lat);
+        var lng = Number(product.lng);
+
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+            var marker = L.marker([lat, lng]).addTo(map);
+
+            marker.bindPopup(
+                '<a href="'+product.url+'">'+product.name+'</a><br><small>'+product.address+'</small>'
+            );
+
+            marker.on('click', function(){
+                map.setView([lat, lng], 14);
+                marker.openPopup();
+            });
+        }
+    }
+
+});
+
+</script>
+
+{% endblock %}

@@ -1,7 +1,41 @@
-<h1>商品出品</h1>
+{% extends "base.html" %}
 
-<form method="post">
+{% block content %}
+
+<h2>商品出品</h2>
+
+<!-- 修正: よりサンプル感のある表記、建物名はジオコーディングに含めない -->
+<div class="alert alert-info">
+    <strong>入力例（ジオコーディング用）</strong><br>
+    以下のように各欄に入力してください（建物名・部屋番号はジオコーディングには含めません）。<br>
+    郵便番号: 230-0076<br>
+    都道府県: 神奈川県<br>
+    市区町村: 横浜市 鶴見区<br>
+    町名: 馬場<br>
+    丁目・番地・号: 1-7-19<br>
+    建物名・部屋番号（任意）: 202（地図のピンには反映されません）
+</div>
+
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">出品</button>
+
+    {{ form.non_field_errors }}
+
+    {% for field in form %}
+        <div class="mb-3">
+            {{ field.label_tag }}
+            {{ field }}
+            <div style="color:red;">
+                {{ field.errors }}
+            </div>
+        </div>
+    {% endfor %}
+
+    <input type="file" name="images" multiple class="form-control mb-3">
+
+    <button type="submit" class="btn btn-success">
+        出品する
+    </button>
 </form>
+
+{% endblock %}
