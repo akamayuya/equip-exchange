@@ -2,34 +2,326 @@
 
 {% block content %}
 
-<h2>{{ product.name }}</h2>
+<section class="hero-panel mb-4">
+    <div class="eyebrow mb-3">Equipment Detail</div>
+    <div class="detail-layout">
+        <div>
+            <h2 class="display-title mb-3">{{ product.name }}</h2>
+            <p class="lead mb-4">{{ product.description }}</p>
 
-{% for image in product.images.all %}
+            <div class="gallery-stack d-grid gap-3">
+                {% for image in product.images.all %}
+                <img src="{{ image.image.url }}" class="img-fluid" alt="{{ product.name }}">
+                {% empty %}
+                <div class="stream-note">この商品にはまだ画像が登録されていません。</div>
+                {% endfor %}
+            </div>
+        </div>
 
-<img src="{{ image.image.url }}" class="img-fluid mb-3">
+        <aside class="panel p-4 h-100">
+            {% if product.is_sold %}
+            <div class="alert alert-warning">
+                この商品は現在取引中、または売却済みです。
+            </div>
+            {% endif %}
 
-{% endfor %}
+            <div class="meta-grid mb-4">
+                <div class="meta-card">
+                    <span>価格</span>
+                    <strong>{{ product.price }} 円</strong>
+                </div>
+                <div class="meta-card">
+                    <span>出品者</span>
+                    <strong>{{ product.seller.username }}</strong>
+                </div>
+                <div class="meta-card">
+                    <span>状態</span>
+                    <strong>
+                        {% if product.is_sold %}
+                        取引中・売却済み
+                        {% else %}
+                        購入可能
+                        {% endif %}
+                    </strong>
+                </div>
+                <div class="meta-card">
+                    <span>コメント</span>
+                    <strong>{{ comments|length }} 件</strong>
+                </div>
+            </div>
 
-<p>{{ product.description }}</p>
+            <div class="action-row">
+                {% if existing_trade %}
+                <a href="{% url 'trade_detail' existing_trade.pk %}" class="btn btn-primary">取引ステータスを見る</a>
+                {% elif request.user.is_authenticated and request.user != product.seller and not product.is_sold %}
+                <a href="{% url 'trade_create' product.id %}" class="btn btn-success">購入する</a>
+                {% elif not request.user.is_authenticated and not product.is_sold %}
+                <a href="{% url 'login' %}?next=/products/{{ product.id }}/" class="btn btn-outline-secondary">ログインして購入</a>
+                {% endif %}
 
-<p>価格: {{ product.price }} 円</p>
+                {% if request.user == product.seller %}
+                <a href="{% url 'product_edit' product.id %}" class="btn btn-warning">編集</a>
+                <a href="{% url 'product_delete' product.id %}" class="btn btn-danger">削除</a>
+                {% endif %}
 
-<p>出品者: {{ product.seller }}</p>
+                <a href="/products/" class="btn btn-outline-secondary">一覧に戻る</a>
+            </div>
+        </aside>
+    </div>
+</section>
 
-{% if request.user == product.seller %}
+<section class="panel p-4 mb-4">
+    <h3 class="section-title">公開コメント</h3>
+    <div class="soft-info mb-4">
+        商品ページ上で誰でも見られる質問・コメント欄です。
+        {% if existing_trade %}
+        取引中の当事者だけが見られる連絡は下の取引チャットに表示されます。
+        {% endif %}
+    </div>
 
-<a href="{% url 'product_edit' product.id %}" class="btn btn-warning">
-    編集
-</a>
+{% if comments %}
 
-<a href="{% url 'product_delete' product.id %}" class="btn btn-danger">
-    削除
-</a>
+<div class="mb-4">
+    {% for comment in comments %}
+    <div class="stream-item">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <strong>{{ comment.user.username }}</strong>
+                    {% if comment.user == product.seller %}
+                    <span class="tag-pill available ms-2">出品者</span>
+                    {% endif %}
+                </div>
+                <small class="text-muted">{{ comment.created_at|date:"Y/m/d H:i" }}</small>
+            </div>
+
+            {% if comment.reply_to %}
+            <div class="soft-info small mb-2">
+                {{ comment.reply_to.user.username }} さんへの返信
+            </div>
+            {% endif %}
+
+            <p class="mb-2">{{ comment.body|linebreaksbr }}</p>
+
+            {% if request.user.is_authenticated %}
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary reply-button"
+                data-reply-to="{{ comment.id }}"
+                data-reply-user="{{ comment.user.username }}"
+            >
+                返信する
+            </button>
+            {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+<div class="stream-note mb-4">
+    公開コメントはまだありません。最初の質問を投稿できます。
+</div>
 
 {% endif %}
 
-<a href="/products/" class="btn btn-secondary">
-    一覧に戻る
-</a>
+{% if request.user.is_authenticated %}
+
+<div class="panel p-4">
+        <h4 class="h5 mb-3">公開コメントを投稿する</h4>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="comment">
+            {{ comment_form.reply_to }}
+            <div class="mb-3">
+                <div id="reply-target" class="alert alert-info d-none"></div>
+                {{ comment_form.body }}
+                {% if comment_form.body.errors %}
+                <div class="text-danger mt-2">{{ comment_form.body.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">送信</button>
+                <button type="button" id="clear-reply" class="btn btn-outline-secondary d-none">返信指定を解除</button>
+            </div>
+        </form>
+</div>
+
+{% else %}
+
+<div class="soft-info mb-4">
+    公開コメントするにはログインが必要です。
+</div>
+
+{% endif %}
+
+</section>
+
+
+
+
+{% if existing_trade %}
+
+<section class="panel p-4 mb-4">
+
+<h3 class="section-title">取引チャット</h3>
+
+<div class="soft-info mb-3">
+    この取引の購入者と出品者だけが見られる連絡欄です。
+</div>
+
+<div id="trade-message-list" class="mb-3">
+    {% if trade_messages|length > 5 %}
+    <div class="collapse" id="older-trade-messages">
+        {% for message in trade_messages|slice:":-5" %}
+        <div class="stream-item" data-message-id="{{ message.id }}">
+                <div>
+                    <strong>{{ message.sender.username }}</strong>
+                    <small class="text-muted">{{ message.created_at|date:"Y/m/d H:i" }}</small>
+                </div>
+                <div>{{ message.body|linebreaksbr }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <button
+        class="btn btn-sm btn-outline-secondary mb-3"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#older-trade-messages"
+        aria-expanded="false"
+        aria-controls="older-trade-messages"
+    >
+        古いメッセージを表示する
+    </button>
+    {% endif %}
+
+    {% for message in trade_messages|slice:"-5:" %}
+    <div class="stream-item" data-message-id="{{ message.id }}">
+            <div>
+                <strong>{{ message.sender.username }}</strong>
+                <small class="text-muted">{{ message.created_at|date:"Y/m/d H:i" }}</small>
+            </div>
+            <div>{{ message.body|linebreaksbr }}</div>
+    </div>
+    {% empty %}
+    <div class="stream-note" id="empty-trade-message">
+        まだ取引チャットはありません。
+    </div>
+    {% endfor %}
+</div>
+
+<div class="panel p-4">
+        <h4 class="h5 mb-3">取引チャットを送信する</h4>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="trade_message">
+            <div class="mb-3">
+                <textarea name="body" class="form-control" rows="3" placeholder="配送や支払いに関する連絡を入力してください"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">送信</button>
+        </form>
+</div>
+
+<div class="action-row mt-4">
+    <a href="{% url 'trade_detail' existing_trade.pk %}" class="btn btn-outline-secondary">取引詳細を開く</a>
+</div>
+
+</section>
+
+{% endif %}
+
+{% if request.user.is_authenticated %}
+<script>
+    const replyInput = document.getElementById("id_reply_to");
+    const replyTarget = document.getElementById("reply-target");
+    const clearReplyButton = document.getElementById("clear-reply");
+    const replyButtons = document.querySelectorAll(".reply-button");
+
+    function clearReplyTarget() {
+        replyInput.value = "";
+        replyTarget.textContent = "";
+        replyTarget.classList.add("d-none");
+        clearReplyButton.classList.add("d-none");
+    }
+
+    replyButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            replyInput.value = button.dataset.replyTo;
+            replyTarget.textContent = `${button.dataset.replyUser} さんへの返信として投稿します。`;
+            replyTarget.classList.remove("d-none");
+            clearReplyButton.classList.remove("d-none");
+            window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+        });
+    });
+
+    clearReplyButton.addEventListener("click", clearReplyTarget);
+
+    {% if existing_trade %}
+    const tradeMessageList = document.getElementById("trade-message-list");
+    let lastTradeMessageId = 0;
+    let isPollingTradeMessages = false;
+    const tradeMessagesApiUrl = "{% url 'chat_messages_api' existing_trade.pk %}";
+
+    if (tradeMessageList) {
+        Array.from(tradeMessageList.querySelectorAll("[data-message-id]")).forEach((element) => {
+            const messageId = Number(element.dataset.messageId);
+            if (!Number.isNaN(messageId)) {
+                lastTradeMessageId = Math.max(lastTradeMessageId, messageId);
+            }
+        });
+
+        function appendTradeMessage(message) {
+            const emptyTradeMessage = document.getElementById("empty-trade-message");
+            if (emptyTradeMessage) {
+                emptyTradeMessage.remove();
+            }
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "stream-item";
+            wrapper.dataset.messageId = message.id;
+
+            const header = document.createElement("div");
+            header.innerHTML = '<strong>' + message.sender + '</strong> <small class="text-muted">' + message.created_at + '</small>';
+
+            const body = document.createElement("div");
+            body.textContent = message.body;
+
+            wrapper.appendChild(header);
+            wrapper.appendChild(body);
+            tradeMessageList.appendChild(wrapper);
+            lastTradeMessageId = Math.max(lastTradeMessageId, Number(message.id));
+        }
+
+        async function pollTradeMessages() {
+            if (document.visibilityState !== "visible" || isPollingTradeMessages) {
+                return;
+            }
+
+            try {
+                isPollingTradeMessages = true;
+                const response = await fetch(tradeMessagesApiUrl + "?after=" + lastTradeMessageId, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                data.messages.forEach(appendTradeMessage);
+            } catch (error) {
+                console.error("trade chat polling error", error);
+            } finally {
+                isPollingTradeMessages = false;
+            }
+        }
+
+        setInterval(pollTradeMessages, 5000);
+    }
+    {% endif %}
+</script>
+{% endif %}
 
 {% endblock %}

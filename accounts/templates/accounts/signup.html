@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <section class="hero-panel mb-4">
+      <div class="eyebrow mb-3">Join Equip Exchange</div>
+      <h2 class="display-title mb-3">法人アカウントを登録する</h2>
+      <p class="muted-copy mb-0">審査を前提にした登録フローなので、安心して出品者・購入者を分けて運用できます。</p>
+    </section>
+
+    <div class="soft-info mb-4">
+      登録後、管理者の承認が完了するとログインできるようになります。
+    </div>
+
+    <form method="post" class="panel p-4">
+      {% csrf_token %}
+
+      {% for field in form %}
+      <div class="mb-3">
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.help_text %}
+        <div class="small text-muted">{{ field.help_text }}</div>
+        {% endif %}
+        {% if field.errors %}
+        <div class="text-danger small">{{ field.errors }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <button type="submit" class="btn btn-success">登録する</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

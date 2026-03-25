@@ -1,14 +1,46 @@
-import requests
+from django.apps import apps
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ProductForm
-from .models import Product, ProductImage
+from .forms import ProductCommentForm, ProductForm
+from .geocoding import populate_product_coordinates
+from .models import Product, ProductComment, ProductImage
+
+
+def _filter_products_by_query(queryset, query):
+    if not query:
+        return queryset
+
+    return queryset.filter(
+        Q(name__icontains=query)
+        | Q(description__icontains=query)
+        | Q(location__icontains=query)
+        | Q(prefecture__icontains=query)
+        | Q(city__icontains=query)
+        | Q(town__icontains=query)
+        | Q(block__icontains=query)
+        | Q(address_line__icontains=query)
+        | Q(seller__username__icontains=query)
+        | Q(seller__company_name__icontains=query)
+    )
 
 
 def product_list(request):
-    products = Product.objects.all()
-    return render(request, "products/product_list.html", {"products": products})
+    search_query = request.GET.get("q", "").strip()
+    products = _filter_products_by_query(
+        Product.objects.select_related("seller").order_by("is_sold", "-created_at"),
+        search_query,
+    )
+    return render(
+        request,
+        "products/product_list.html",
+        {
+            "products": products,
+            "search_query": search_query,
+        },
+    )
 
 
 @login_required
@@ -23,46 +55,7 @@ def product_create(request):
             product = form.save(commit=False)
             product.seller = request.user
 
-            # 修正: 建物名を含まない geocode_address() を使用する
-            address = (
-                product.geocode_address()
-                if hasattr(product, "geocode_address")
-                else product.location
-            )
-
-            # ★デバッグ: ターミナルで確認
-            print(f"[GEOCODE] address送信値: '{address}'")
-
-            # Nominatimから日本の住所に強い国土地理院APIへ変更
-            url = "https://msearch.gsi.go.jp/address-search/AddressSearch"
-            params = {"q": address}
-
-            try:
-                response = requests.get(url, params=params, timeout=5)
-                response.raise_for_status()
-                data = response.json()
-                # ★デバッグ: APIレスポンス確認
-                print(f"[GEOCODE] APIレスポンス: {data}")
-            except Exception as e:
-                print(f"[GEOCODE] APIエラー: {e}")
-                data = []
-
-            if data and isinstance(data, list):
-                # 国土地理院APIは coordinates に [longitude, latitude] の順で格納される
-                coords = data[0].get("geometry", {}).get("coordinates")
-                print(f"[GEOCODE] coords: {coords}")
-                if coords and len(coords) == 2:
-                    try:
-                        product.longitude = float(coords[0])
-                        product.latitude = float(coords[1])
-                        print(
-                            f"[GEOCODE] 保存する緯度経度: lat={product.latitude}, lng={product.longitude}"
-                        )
-                    except (TypeError, ValueError):
-                        product.latitude = None
-                        product.longitude = None
-            else:
-                print("[GEOCODE] データなし（空リスト）")
+            populate_product_coordinates(product)
 
             product.save()
 
@@ -83,7 +76,78 @@ def product_detail(request, pk):
 
     product = get_object_or_404(Product, pk=pk)
 
-    return render(request, "products/product_detail.html", {"product": product})
+    existing_trade = None
+    trade_messages = []
+
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return redirect(f"/accounts/login/?next=/products/{product.pk}/")
+
+        existing_trade = (
+            product.trades.filter(
+                status__in=["pending", "paid", "shipped", "completed"],
+                seller=request.user,
+            ).first()
+            or product.trades.filter(
+                status__in=["pending", "paid", "shipped", "completed"],
+                buyer=request.user,
+            ).first()
+        )
+
+        form_type = request.POST.get("form_type", "comment")
+        if form_type == "trade_message" and existing_trade:
+            body = request.POST.get("body", "").strip()
+            if body:
+                Message = apps.get_model("trades", "Message")
+                Message.objects.create(
+                    trade=existing_trade,
+                    sender=request.user,
+                    body=body,
+                )
+                messages.success(request, "取引チャットを送信しました。")
+                return redirect("product_detail", pk=product.pk)
+            messages.error(request, "メッセージを入力してください。")
+
+        comment_form = ProductCommentForm(request.POST)
+        if form_type == "comment" and comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            if comment.reply_to and comment.reply_to.product_id != product.pk:
+                comment.reply_to = None
+            comment.product = product
+            comment.user = request.user
+            comment.save()
+            messages.success(request, "コメントを投稿しました。")
+            return redirect("product_detail", pk=product.pk)
+    else:
+        comment_form = ProductCommentForm()
+
+    if request.user.is_authenticated:
+        existing_trade = (
+            product.trades.filter(
+                status__in=["pending", "paid", "shipped", "completed"],
+                seller=request.user,
+            ).first()
+            or product.trades.filter(
+                status__in=["pending", "paid", "shipped", "completed"],
+                buyer=request.user,
+            ).first()
+        )
+        if existing_trade:
+            trade_messages = list(existing_trade.messages.select_related("sender"))
+
+    comments = product.comments.select_related("user", "reply_to", "reply_to__user")
+
+    return render(
+        request,
+        "products/product_detail.html",
+        {
+            "product": product,
+            "existing_trade": existing_trade,
+            "trade_messages": trade_messages,
+            "comments": comments,
+            "comment_form": comment_form,
+        },
+    )
 
 
 @login_required
@@ -103,45 +167,7 @@ def product_edit(request, pk):
             # 変更を保存する前に緯度経度を再取得
             product = form.save(commit=False)
 
-            # 修正: 建物名を含まない geocode_address() を使用する
-            address = (
-                product.geocode_address()
-                if hasattr(product, "geocode_address")
-                else product.location
-            )
-
-            # ★デバッグ: ターミナルで確認
-            print(f"[GEOCODE] address送信値: '{address}'")
-
-            # Nominatimから日本の住所に強い国土地理院APIへ変更
-            url = "https://msearch.gsi.go.jp/address-search/AddressSearch"
-            params = {"q": address}
-
-            try:
-                response = requests.get(url, params=params, timeout=5)
-                response.raise_for_status()
-                data = response.json()
-                # ★デバッグ: APIレスポンス確認
-                print(f"[GEOCODE] APIレスポンス: {data}")
-            except Exception as e:
-                print(f"[GEOCODE] APIエラー: {e}")
-                data = []
-
-            if data and isinstance(data, list):
-                coords = data[0].get("geometry", {}).get("coordinates")
-                print(f"[GEOCODE] coords: {coords}")
-                if coords and len(coords) == 2:
-                    try:
-                        product.longitude = float(coords[0])
-                        product.latitude = float(coords[1])
-                        print(
-                            f"[GEOCODE] 保存する緯度経度: lat={product.latitude}, lng={product.longitude}"
-                        )
-                    except (TypeError, ValueError):
-                        product.latitude = None
-                        product.longitude = None
-            else:
-                print("[GEOCODE] データなし（空リスト）")
+            populate_product_coordinates(product)
 
             product.save()
             return redirect("product_detail", pk=product.pk)
@@ -176,9 +202,20 @@ def product_delete(request, pk):
 
 
 def product_map(request):
+    search_query = request.GET.get("q", "").strip()
 
-    products = Product.objects.filter(
-        is_sold=False, latitude__isnull=False, longitude__isnull=False
+    products = _filter_products_by_query(
+        Product.objects.select_related("seller").filter(
+            is_sold=False, latitude__isnull=False, longitude__isnull=False
+        ),
+        search_query,
     )
 
-    return render(request, "products/product_map.html", {"products": products})
+    return render(
+        request,
+        "products/product_map.html",
+        {
+            "products": products,
+            "search_query": search_query,
+        },
+    )

@@ -143,3 +143,36 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"{self.product.name} image"
+
+
+class ProductComment(models.Model):
+    product = models.ForeignKey(
+        "products.Product",
+        on_delete=models.CASCADE,
+        related_name="comments",
+        verbose_name="商品",
+    )
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="product_comments",
+        verbose_name="投稿者",
+    )
+    body = models.TextField(verbose_name="コメント")
+    reply_to = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="replies",
+        verbose_name="返信先",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="投稿日")
+
+    def __str__(self):
+        return f"{self.product.name} - {self.user.username}"
+
+    class Meta:
+        verbose_name = "商品コメント"
+        verbose_name_plural = "商品コメント一覧"
+        ordering = ["created_at"]

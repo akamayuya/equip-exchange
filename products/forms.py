@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Product
+from .models import Product, ProductComment
 
 
 class ProductForm(forms.ModelForm):
@@ -47,4 +47,23 @@ class ProductForm(forms.ModelForm):
                 attrs={"placeholder": "例: 202（任意、ジオコーディングには含めない）"}
             ),
             "location": forms.TextInput(attrs={"placeholder": "例: 神奈川県"}),
+        }
+
+
+class ProductCommentForm(forms.ModelForm):
+
+    class Meta:
+        model = ProductComment
+        fields = ["body", "reply_to"]
+        labels = {
+            "body": "コメント",
+        }
+        widgets = {
+            "body": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "商品について質問やコメントを入力してください",
+                }
+            ),
+            "reply_to": forms.HiddenInput(),
         }

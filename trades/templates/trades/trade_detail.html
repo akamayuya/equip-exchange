@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel mb-4">
+  <div class="eyebrow mb-3">Trade Detail</div>
+  <h2 class="display-title mb-3">{{ trade.product.name }}</h2>
+  <div class="meta-grid">
+    <div class="meta-card"><span>価格</span><strong>¥{{ trade.price|floatformat:0 }}</strong></div>
+    <div class="meta-card"><span>ステータス</span><strong>{{ trade.get_status_display }}</strong></div>
+    <div class="meta-card"><span>購入者ニックネーム</span><strong>{{ trade.buyer.username }}</strong></div>
+    <div class="meta-card"><span>出品者</span><strong>{{ trade.seller.username }}</strong></div>
+  </div>
+</section>
+
+<section class="panel p-4">
+<div class="soft-info mb-4">
+  取引の流れ: 支払い待ち → 支払い済み → 発送済み → 取引完了
+</div>
+
+<div class="action-row mb-4">
+  <a href="{% url 'product_detail' trade.product.pk %}" class="btn btn-outline-secondary">商品詳細を開く</a>
+</div>
+
+{% if request.user == trade.buyer and trade.status == "pending" %}
+<form method="post" action="{% url 'trade_update_status' trade.pk %}" class="mb-2">
+  {% csrf_token %}
+  <input type="hidden" name="status" value="paid">
+  <button type="submit" class="btn btn-primary">支払い済みにする</button>
+</form>
+{% endif %}
+
+{% if request.user == trade.seller and trade.status == "paid" %}
+<form method="post" action="{% url 'trade_update_status' trade.pk %}" class="mb-2">
+  {% csrf_token %}
+  <input type="hidden" name="status" value="shipped">
+  <button type="submit" class="btn btn-warning">発送済みにする</button>
+</form>
+{% endif %}
+
+{% if request.user == trade.buyer and trade.status == "shipped" %}
+<form method="post" action="{% url 'trade_update_status' trade.pk %}" class="mb-2">
+  {% csrf_token %}
+  <input type="hidden" name="status" value="completed">
+  <button type="submit" class="btn btn-success">受取完了</button>
+</form>
+{% endif %}
+
+<a href="{% url 'mypage' %}" class="btn btn-secondary">マイページに戻る</a>
+</section>
+{% endblock %}

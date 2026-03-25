@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="mb-1">チャット</h2>
+    <p class="mb-0">商品: {{ trade.product.name }} / ステータス: {{ trade.get_status_display }}</p>
+  </div>
+  <a href="{% url 'trade_detail' trade.pk %}" class="btn btn-secondary">取引詳細へ戻る</a>
+</div>
+
+<div id="message-list" class="border rounded p-3 mb-3" style="height: 420px; overflow-y: auto; background: #fafafa;">
+  {% for message in messages %}
+  <div class="mb-3" data-message-id="{{ message.id }}">
+    <div>
+      <strong>{{ message.sender.username }}</strong>
+      <small class="text-muted">{{ message.created_at|date:"Y/m/d H:i" }}</small>
+    </div>
+    <div>{{ message.body|linebreaksbr }}</div>
+  </div>
+  {% empty %}
+  <p class="text-muted" id="empty-message">まだメッセージはありません。</p>
+  {% endfor %}
+</div>
+
+<form method="post" class="mb-3">
+  {% csrf_token %}
+  <div class="mb-2">
+    <textarea name="body" class="form-control" rows="3" placeholder="メッセージを入力してください"></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">送信</button>
+</form>
+
+<script>
+  const messageList = document.getElementById("message-list");
+  let lastMessageId = 0;
+
+  Array.from(messageList.querySelectorAll("[data-message-id]")).forEach((element) => {
+    const messageId = Number(element.dataset.messageId);
+    if (!Number.isNaN(messageId)) {
+      lastMessageId = Math.max(lastMessageId, messageId);
+    }
+  });
+
+  function appendMessage(message) {
+    const emptyMessage = document.getElementById("empty-message");
+    if (emptyMessage) {
+      emptyMessage.remove();
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "mb-3";
+    wrapper.dataset.messageId = message.id;
+
+    const header = document.createElement("div");
+    header.innerHTML = '<strong>' + message.sender + '</strong> <small class="text-muted">' + message.created_at + '</small>';
+
+    const body = document.createElement("div");
+    body.textContent = message.body;
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(body);
+    messageList.appendChild(wrapper);
+    messageList.scrollTop = messageList.scrollHeight;
+    lastMessageId = Math.max(lastMessageId, Number(message.id));
+  }
+
+  async function pollMessages() {
+    try {
+      const response = await fetch("{% url 'chat_messages_api' trade.pk %}?after=" + lastMessageId, {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      data.messages.forEach(appendMessage);
+    } catch (error) {
+      console.error("chat polling error", error);
+    }
+  }
+
+  messageList.scrollTop = messageList.scrollHeight;
+  setInterval(pollMessages, 5000);
+</script>
+
+{% endblock %}

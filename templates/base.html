@@ -4,31 +4,570 @@
 <head>
 
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <title>Equip Exchange</title>
 
+    <style>
+        :root {
+            /* Active theme: Glass Mint */
+            --bg: #edf6f4;
+            --surface: rgba(247, 252, 251, 0.76);
+            --surface-strong: rgba(255, 255, 255, 0.88);
+            --ink: #1f2937;
+            --muted: #667085;
+            --line: rgba(17, 94, 89, 0.14);
+            --brand: #0f766e;
+            --brand-deep: #115e59;
+            --accent: #ea580c;
+            --danger: #b91c1c;
+            --shadow: 0 20px 45px rgba(31, 41, 51, 0.08);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --page-background:
+                radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.15), transparent 24%),
+                radial-gradient(circle at 100% 12%, rgba(6, 182, 212, 0.18), transparent 28%),
+                radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.12), transparent 30%),
+                linear-gradient(135deg, #f4fbfa 0%, #e8f5f2 46%, #eef7ff 100%);
+            --hero-background:
+                linear-gradient(135deg, rgba(15, 118, 110, 0.14), rgba(255, 255, 255, 0.78)),
+                var(--surface-strong);
+        }
+
+        /* Theme option 2: Editorial Peach
+        :root {
+            --bg: #fbefe8;
+            --surface: rgba(255, 247, 244, 0.8);
+            --surface-strong: rgba(255, 252, 249, 0.9);
+            --ink: #2f241f;
+            --muted: #7a6a63;
+            --line: rgba(180, 83, 9, 0.14);
+            --brand: #c2410c;
+            --brand-deep: #9a3412;
+            --accent: #0284c7;
+            --danger: #b91c1c;
+            --shadow: 0 20px 45px rgba(66, 32, 6, 0.1);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --page-background:
+                radial-gradient(circle at 15% 0%, rgba(251, 146, 60, 0.18), transparent 24%),
+                radial-gradient(circle at 100% 18%, rgba(244, 114, 182, 0.15), transparent 25%),
+                radial-gradient(circle at 50% 100%, rgba(59, 130, 246, 0.1), transparent 28%),
+                linear-gradient(135deg, #fff8f3 0%, #fff0e7 52%, #fff6f0 100%);
+            --hero-background:
+                linear-gradient(135deg, rgba(251, 146, 60, 0.16), rgba(255, 255, 255, 0.76)),
+                var(--surface-strong);
+        }
+        */
+
+        /* Theme option 3: Clear Blue
+        :root {
+            --bg: #eef4fb;
+            --surface: rgba(247, 250, 255, 0.78);
+            --surface-strong: rgba(255, 255, 255, 0.9);
+            --ink: #18212f;
+            --muted: #607089;
+            --line: rgba(37, 99, 235, 0.14);
+            --brand: #2563eb;
+            --brand-deep: #1d4ed8;
+            --accent: #0f766e;
+            --danger: #b91c1c;
+            --shadow: 0 20px 45px rgba(30, 64, 175, 0.09);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --page-background:
+                radial-gradient(circle at 12% 8%, rgba(59, 130, 246, 0.17), transparent 24%),
+                radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.16), transparent 26%),
+                radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.12), transparent 30%),
+                linear-gradient(135deg, #f8fbff 0%, #edf5ff 50%, #f3f7ff 100%);
+            --hero-background:
+                linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(255, 255, 255, 0.8)),
+                var(--surface-strong);
+        }
+        */
+
+        /* Theme option 4: Soft Graphite
+        :root {
+            --bg: #f1f3f5;
+            --surface: rgba(249, 250, 251, 0.78);
+            --surface-strong: rgba(255, 255, 255, 0.9);
+            --ink: #20262d;
+            --muted: #6b7280;
+            --line: rgba(55, 65, 81, 0.12);
+            --brand: #111827;
+            --brand-deep: #030712;
+            --accent: #0f766e;
+            --danger: #b91c1c;
+            --shadow: 0 20px 45px rgba(17, 24, 39, 0.08);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --page-background:
+                radial-gradient(circle at 10% 0%, rgba(148, 163, 184, 0.18), transparent 22%),
+                radial-gradient(circle at 100% 12%, rgba(56, 189, 248, 0.12), transparent 24%),
+                radial-gradient(circle at 60% 100%, rgba(15, 118, 110, 0.1), transparent 28%),
+                linear-gradient(135deg, #fafafa 0%, #f1f5f9 50%, #eef2f7 100%);
+            --hero-background:
+                linear-gradient(135deg, rgba(17, 24, 39, 0.08), rgba(255, 255, 255, 0.82)),
+                var(--surface-strong);
+        }
+        */
+
+        /*
+        Theme switch method:
+        1. Keep only one :root block active.
+        2. To switch, comment out the active :root block above.
+        3. Uncomment one of the theme option blocks.
+        */
+
+        body {
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: "Zen Kaku Gothic New", sans-serif;
+            background: var(--page-background);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        .navbar-brand,
+        .display-title {
+            font-family: "Fraunces", serif;
+            letter-spacing: -0.02em;
+        }
+
+        a {
+            color: var(--brand-deep);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: var(--brand);
+        }
+
+        .app-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 14px 0;
+            backdrop-filter: blur(18px);
+            background: rgba(27, 38, 44, 0.76);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+        }
+
+        .app-shell {
+            padding: 32px 0 56px;
+        }
+
+        .page-frame {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+            padding: 28px;
+        }
+
+        .hero-panel,
+        .panel,
+        .card,
+        .table-panel {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            box-shadow: none;
+            background: var(--surface-strong);
+        }
+
+        .hero-panel {
+            padding: 28px;
+            background: var(--hero-background);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(15, 118, 110, 0.1);
+            color: var(--brand-deep);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .display-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 1.05;
+            margin-bottom: 0.75rem;
+        }
+
+        .section-title {
+            font-size: 1.45rem;
+            margin-bottom: 1rem;
+        }
+
+        .muted-copy {
+            color: var(--muted);
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+        }
+
+        .meta-card {
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--line);
+        }
+
+        .meta-card span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin-bottom: 4px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+        }
+
+        .product-card {
+            height: 100%;
+            overflow: hidden;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 35px rgba(31, 41, 51, 0.1);
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .tag-pill.available {
+            background: rgba(22, 163, 74, 0.12);
+            color: #166534;
+        }
+
+        .tag-pill.sold {
+            background: rgba(100, 116, 139, 0.14);
+            color: #334155;
+        }
+
+        .detail-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.9fr);
+            gap: 24px;
+        }
+
+        .gallery-stack img {
+            width: 100%;
+            border-radius: var(--radius-lg);
+            object-fit: cover;
+            border: 1px solid var(--line);
+            background: #fff;
+        }
+
+        .stream-item {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .stream-item + .stream-item {
+            margin-top: 12px;
+        }
+
+        .stream-note {
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.62);
+            border: 1px dashed var(--line);
+            color: var(--muted);
+        }
+
+        .soft-info {
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            background: rgba(15, 118, 110, 0.08);
+            border: 1px solid rgba(15, 118, 110, 0.14);
+        }
+
+        .action-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn {
+            border-radius: 999px;
+            padding: 0.72rem 1.1rem;
+            font-weight: 700;
+        }
+
+        .btn-primary {
+            background: var(--brand);
+            border-color: var(--brand);
+        }
+
+        .btn-primary:hover {
+            background: var(--brand-deep);
+            border-color: var(--brand-deep);
+        }
+
+        .btn-success {
+            background: #166534;
+            border-color: #166534;
+        }
+
+        .btn-warning {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .btn-outline-secondary,
+        .btn-secondary,
+        .btn-outline-primary,
+        .btn-outline-light {
+            border-width: 1px;
+        }
+
+        .form-control,
+        textarea,
+        input,
+        select {
+            border-radius: 14px !important;
+            border-color: rgba(84, 93, 78, 0.2) !important;
+            padding: 0.8rem 0.95rem !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+        }
+
+        .table-modern {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-modern th,
+        .table-modern td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: middle;
+        }
+
+        .table-modern thead th {
+            color: var(--muted);
+            font-size: 0.84rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .table-modern tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .app-footer {
+            padding: 0 0 32px;
+        }
+
+        .breadcrumb-panel {
+            padding: 18px 22px;
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.48);
+            box-shadow: var(--shadow);
+        }
+
+        .breadcrumb-label {
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .app-breadcrumb {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .app-breadcrumb li {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .app-breadcrumb li + li::before {
+            content: ">";
+            color: rgba(102, 112, 133, 0.7);
+            margin-right: 8px;
+        }
+
+        .app-breadcrumb .current {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        @media (max-width: 991px) {
+            .detail-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .page-frame,
+            .hero-panel {
+                padding: 20px;
+            }
+
+            .breadcrumb-panel {
+                padding: 16px 18px;
+            }
+        }
+    </style>
+
 </head>
 
 <body>
 
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
+    <nav class="navbar navbar-dark app-navbar">
+        <div class="container d-flex justify-content-between align-items-center">
             <a class="navbar-brand" href="/products/">Equip Exchange</a>
+            <div class="d-flex gap-2 align-items-center">
+                <a href="/products/map/" class="btn btn-outline-light">
+                    Map
+                </a>
+                {% if request.user.is_authenticated %}
+                <a href="{% url 'mypage' %}" class="btn btn-outline-light">マイページ</a>
+                <a href="{% url 'logout' %}" class="btn btn-light">ログアウト</a>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-outline-light">ログイン</a>
+                <a href="{% url 'signup' %}" class="btn btn-light">新規登録</a>
+                {% endif %}
+            </div>
         </div>
-        <a href="/products/map/" class="btn btn-outline-light">
-            Map
-        </a>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container app-shell">
+        <div class="page-frame">
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
 
         {% block content %}
 
         {% endblock %}
 
+        </div>
     </div>
+
+    <footer class="app-footer">
+        <div class="container">
+            <div class="breadcrumb-panel">
+                <div class="breadcrumb-label">Breadcrumb</div>
+                <ol class="app-breadcrumb">
+                    {% if request.resolver_match.url_name == 'product_list' %}
+                    <li><span class="current">商品一覧</span></li>
+
+                    {% elif request.resolver_match.url_name == 'product_detail' %}
+                    <li><a href="{% url 'product_list' %}">商品一覧</a></li>
+                    <li><span class="current">{{ product.name }}</span></li>
+
+                    {% elif request.resolver_match.url_name == 'product_edit' %}
+                    <li><a href="{% url 'product_list' %}">商品一覧</a></li>
+                    <li><a href="{% url 'product_detail' product.pk %}">{{ product.name }}</a></li>
+                    <li><span class="current">商品編集</span></li>
+
+                    {% elif request.resolver_match.url_name == 'product_delete' %}
+                    <li><a href="{% url 'product_list' %}">商品一覧</a></li>
+                    <li><a href="{% url 'product_detail' product.pk %}">{{ product.name }}</a></li>
+                    <li><span class="current">商品削除</span></li>
+
+                    {% elif request.resolver_match.url_name == 'trade_create' %}
+                    <li><a href="{% url 'product_list' %}">商品一覧</a></li>
+                    <li><a href="{% url 'product_detail' product.pk %}">{{ product.name }}</a></li>
+                    <li><span class="current">購入確認</span></li>
+
+                    {% elif request.resolver_match.url_name == 'trade_detail' %}
+                    <li><a href="{% url 'product_list' %}">商品一覧</a></li>
+                    <li><a href="{% url 'product_detail' trade.product.pk %}">{{ trade.product.name }}</a></li>
+                    <li><span class="current">取引詳細</span></li>
+
+                    {% elif request.resolver_match.url_name == 'chat' %}
+                    <li><a href="{% url 'product_list' %}">商品一覧</a></li>
+                    <li><a href="{% url 'product_detail' trade.product.pk %}">{{ trade.product.name }}</a></li>
+                    <li><a href="{% url 'trade_detail' trade.pk %}">取引詳細</a></li>
+                    <li><span class="current">チャット</span></li>
+
+                    {% elif request.resolver_match.url_name == 'product_map' %}
+                    <li><span class="current">地図で探す</span></li>
+
+                    {% elif request.resolver_match.url_name == 'product_create' %}
+                    <li><span class="current">商品を出品</span></li>
+
+                    {% elif request.resolver_match.url_name == 'mypage' %}
+                    <li><span class="current">マイページ</span></li>
+
+                    {% elif request.resolver_match.url_name == 'login' %}
+                    <li><span class="current">ログイン</span></li>
+
+                    {% elif request.resolver_match.url_name == 'signup' %}
+                    <li><span class="current">新規登録</span></li>
+
+                    {% endif %}
+                </ol>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 

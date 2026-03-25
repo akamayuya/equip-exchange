@@ -2,34 +2,80 @@
 
 {% block content %}
 
-<h1 class="mb-4">商品一覧</h1>
+<div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-4">
+    <h2 class="mb-0">商品一覧</h2>
 
-<a href="/products/create/" class="btn btn-primary mb-3">
-    商品を出品
-</a>
-
-<a href="{% url 'product_map' %}" class="btn btn-primary">
-    地図で探す
-</a>
-
-{% for product in products %}
-
-<div class="card mb-3">
-    <div class="card-body">
-
-        <h5 class="card-title">
-            <a href="/products/{{ product.id }}/">
-                {{ product.name }}
-            </a>
-        </h5>
-
-        <p class="card-text">
-            {{ product.price }} 円
-        </p>
-
+    <div class="action-row align-items-center">
+        <a href="/products/create/" class="btn btn-primary">商品を出品</a>
     </div>
 </div>
 
-{% endfor %}
+
+<section class="panel p-4 mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-lg-9">
+            {% comment %} <label for="product-search" class="form-label">商品検索</label> {% endcomment %}
+            <input
+                id="product-search"
+                type="text"
+                name="q"
+                value="{{ search_query }}"
+                class="form-control"
+                placeholder="商品名、説明、所在地、法人名、ニックネームで検索"
+            >
+        </div>
+        <div class="col-lg-3">
+            <div class="action-row justify-content-lg-end">
+                <button type="submit" class="btn btn-primary">検索する</button>
+                {% if search_query %}
+                <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">クリア</a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</section>
+
+{% if not products %}
+
+<div class="alert alert-secondary mt-3">
+    {% if search_query %}
+    「{{ search_query }}」に一致する商品はありません。
+    {% else %}
+    現在登録されている商品はありません。
+    {% endif %}
+</div>
+
+{% endif %}
+
+<section class="product-grid">
+    {% for product in products %}
+    <article class="card product-card">
+        <div class="card-body p-4 d-flex flex-column gap-3">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <h5 class="card-title mb-0">
+                    <a href="{% url 'product_detail' product.id %}">{{ product.name }}</a>
+                </h5>
+                {% if product.is_sold %}
+                <span class="tag-pill sold">取引中・売却済み</span>
+                {% else %}
+                <span class="tag-pill available">購入可能</span>
+                {% endif %}
+            </div>
+
+            <div class="muted-copy small">
+                出品者: {{ product.seller.username }}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-end mt-auto">
+                <div>
+                    <div class="muted-copy small">価格</div>
+                    <div class="fs-4 fw-bold">{{ product.price }} 円</div>
+                </div>
+                <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary">詳細を見る</a>
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+</section>
 
 {% endblock %}

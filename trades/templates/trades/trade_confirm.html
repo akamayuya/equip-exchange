@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>購入確認</h2>
+<p>商品名: {{ product.name }}</p>
+<p>価格: ¥{{ product.price|floatformat:0 }}</p>
+<p>出品者: {{ product.seller.username }}</p>
+
+<div class="alert alert-info">
+  購入を確定すると、この商品は一覧と地図から非表示になり、取引が開始されます。
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-success">購入を確定する</button>
+  <a href="{% url 'product_detail' product.pk %}" class="btn btn-secondary">戻る</a>
+</form>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel mb-4">
+  <div class="eyebrow mb-3">My Page</div>
+  <p class="mb-2">法人名：{{ request.user.company_name|default:"未登録" }}</p>
+  <p class="mb-2">氏名：{% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}未登録{% endif %}</p>
+  <p class="mb-2">ニックネーム：{{ request.user.username }}</p>
+  <p class="muted-copy mb-0">購入、販売、出品を1画面で確認できます。</p>
+</section>
+
+<section class="panel p-4 mb-4">
+  <h3 class="section-title">購入中・購入履歴</h3>
+  {% if my_purchases %}
+    <div class="table-responsive">
+    <table class="table-modern">
+      <thead>
+        <tr><th>商品名</th><th>価格</th><th>ステータス</th><th>出品者</th><th>商品</th><th>取引</th></tr>
+      </thead>
+      <tbody>
+        {% for trade in my_purchases %}
+        <tr>
+          <td>{{ trade.product.name }}</td>
+          <td>¥{{ trade.price|floatformat:0 }}</td>
+          <td>{{ trade.get_status_display }}</td>
+          <td>{{ trade.seller.username }}</td>
+          <td><a href="{% url 'product_detail' trade.product.pk %}">商品詳細</a></td>
+          <td><a href="{% url 'trade_detail' trade.pk %}">取引詳細</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="stream-note">購入履歴はありません。</div>
+  {% endif %}
+</section>
+
+<section class="panel p-4 mb-4">
+  <h3 class="section-title">販売中・販売履歴</h3>
+  {% if my_sales %}
+    <div class="table-responsive">
+    <table class="table-modern">
+      <thead>
+        <tr><th>商品名</th><th>価格</th><th>ステータス</th><th>購入者ニックネーム</th><th>商品</th><th>取引</th></tr>
+      </thead>
+      <tbody>
+        {% for trade in my_sales %}
+        <tr>
+          <td>{{ trade.product.name }}</td>
+          <td>¥{{ trade.price|floatformat:0 }}</td>
+          <td>{{ trade.get_status_display }}</td>
+          <td>{{ trade.buyer.username }}</td>
+          <td><a href="{% url 'product_detail' trade.product.pk %}">商品詳細</a></td>
+          <td><a href="{% url 'trade_detail' trade.pk %}">取引詳細</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="stream-note">販売履歴はありません。</div>
+  {% endif %}
+</section>
+
+<section class="panel p-4">
+  <div class="d-flex justify-content-between align-items-center gap-3 mb-3 flex-wrap">
+    <h3 class="section-title mb-0">出品中の商品</h3>
+    <a href="{% url 'product_create' %}" class="btn btn-primary">＋ 新規出品</a>
+  </div>
+  {% if my_products %}
+    <div class="table-responsive">
+    <table class="table-modern">
+      <thead>
+        <tr><th>商品名</th><th>価格</th><th>状態</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        {% for product in my_products %}
+        <tr>
+          <td>{{ product.name }}</td>
+          <td>¥{{ product.price|floatformat:0 }}</td>
+          <td>{% if product.is_sold %}売却済み{% else %}出品中{% endif %}</td>
+          <td>
+            <a href="{% url 'product_detail' product.pk %}">詳細</a> |
+            <a href="{% url 'product_edit' product.pk %}">編集</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="stream-note">出品中の商品はありません。</div>
+  {% endif %}
+</section>
+{% endblock %}
