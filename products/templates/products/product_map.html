@@ -5,9 +5,9 @@
 <section class="hero-panel mb-4">
     <div class="row align-items-end g-4">
         <div class="col-lg-8">
-            <div class="eyebrow mb-3">Map Search</div>
+            <div class="eyebrow mb-3">地図検索</div>
             <h2 class="display-title mb-3">機材マップ</h2>
-            <p class="muted-copy mb-0">商品名や所在地で絞り込みながら、出品位置を地図で確認できます。</p>
+            <p class="muted-copy mb-0">商品名や会社所在地で絞り込みながら、出品企業の位置を地図で確認できます。</p>
         </div>
         <div class="col-lg-4">
             <div class="action-row justify-content-lg-end">
@@ -27,7 +27,7 @@
                 name="q"
                 value="{{ search_query }}"
                 class="form-control"
-                placeholder="商品名、所在地、法人名、ニックネームで検索"
+                placeholder="商品名、会社所在地、法人名、ニックネームで検索"
             >
         </div>
         <div class="col-lg-3">
@@ -125,7 +125,7 @@
     }
 </style>
 
-{% if not products %}
+{% if not map_products %}
 <div class="stream-note mb-4">
     {% if search_query %}
     「{{ search_query }}」に一致する地図表示可能な商品はありません。
@@ -161,12 +161,13 @@ var productIcon = L.divIcon({
 
 // Django → JS データ変換（null 安全に出力）
 var products = [
-{% for p in products %}
+{% for p in map_products %}
 {
     name: "{{ p.name|escapejs }}",
+    companyName: "{{ p.company_name|escapejs }}",
     lat: {{ p.latitude|default_if_none:"null" }},
     lng: {{ p.longitude|default_if_none:"null" }},
-    address: "{{ p.geocode_address|escapejs }}",
+    address: "{{ p.address|escapejs }}",
     url: "{% url 'product_detail' p.id %}"
 }{% if not forloop.last %},{% endif %}
 {% endfor %}
@@ -191,6 +192,7 @@ products.forEach(function(product){
             marker.bindPopup(
                 '<div class="map-popup">' +
                     '<span class="map-popup-title">' + product.name + '</span>' +
+                    '<div class="map-popup-address">' + product.companyName + '</div>' +
                     '<div class="map-popup-address">' + product.address + '</div>' +
                     '<a class="map-popup-link" href="' + product.url + '">商品詳細を見る</a>' +
                 '</div>'

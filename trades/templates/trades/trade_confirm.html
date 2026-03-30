@@ -1,17 +1,52 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>購入確認</h2>
-<p>商品名: {{ product.name }}</p>
-<p>価格: ¥{{ product.price|floatformat:0 }}</p>
-<p>出品者: {{ product.seller.username }}</p>
+<section class="hero-panel mb-4">
+  <div class="eyebrow mb-3">購入確認</div>
+  <h2 class="display-title mb-3">購入確認</h2>
+  <div class="meta-grid">
+    <div class="meta-card"><span>商品名</span><strong>{{ product.name }}</strong></div>
+    <div class="meta-card"><span>価格</span><strong>¥{{ product.price|floatformat:0 }}</strong></div>
+    <div class="meta-card"><span>出品者</span><strong>{{ product.seller.username }}</strong></div>
+    <div class="meta-card"><span>決済方式</span><strong>モック決済</strong></div>
+  </div>
+</section>
 
-<div class="alert alert-info">
-  購入を確定すると、この商品は一覧と地図から非表示になり、取引が開始されます。
-</div>
+<section class="panel p-4">
+  <div class="soft-info mb-4">
+    購入を確定すると、モック決済が成功したものとして取引は支払い済みで開始されます。実際の課金は発生しません。
+  </div>
 
-<form method="post">
-  {% csrf_token %}
-  <button type="submit" class="btn btn-success">購入を確定する</button>
-  <a href="{% url 'product_detail' product.pk %}" class="btn btn-secondary">戻る</a>
-</form>
+  {% if payment_error %}
+  <div class="alert alert-danger">{{ payment_error }}</div>
+  {% endif %}
+
+  {% if payment_methods %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-4">
+      <label for="payment_method" class="form-label">使用するカード</label>
+      <select name="payment_method" id="payment_method" class="form-select" required>
+        <option value="">選択してください</option>
+        {% for payment_method in payment_methods %}
+        <option value="{{ payment_method.pk }}" {% if payment_method.is_default %}selected{% endif %}>
+          {{ payment_method.get_brand_display }} / **** {{ payment_method.last4 }} / {{ payment_method.exp_month|stringformat:"02d" }}/{{ payment_method.exp_year }}
+          {% if payment_method.is_default %} / デフォルト{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="action-row">
+      <button type="submit" class="btn btn-success">購入を確定する</button>
+      <a href="{% url 'product_detail' product.pk %}" class="btn btn-secondary">戻る</a>
+    </div>
+  </form>
+  {% else %}
+  <div class="stream-note mb-3">購入前に支払い方法の登録が必要です。</div>
+  <div class="action-row">
+    <a href="{% url 'payment_method_create' %}" class="btn btn-primary">カードを登録する</a>
+    <a href="{% url 'product_detail' product.pk %}" class="btn btn-outline-secondary">商品詳細へ戻る</a>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}

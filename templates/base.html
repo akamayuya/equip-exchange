@@ -12,7 +12,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <title>Equip Exchange</title>
+    <title>Equip Exchange | 医療機器マーケット</title>
 
     <style>
         :root {
@@ -368,6 +368,8 @@
         }
 
         .form-control,
+        .form-select,
+        .form-check-input,
         textarea,
         input,
         select {
@@ -375,6 +377,38 @@
             border-color: rgba(84, 93, 78, 0.2) !important;
             padding: 0.8rem 0.95rem !important;
             background: rgba(255, 255, 255, 0.95) !important;
+        }
+
+        .form-select {
+            padding-right: 2.75rem !important;
+        }
+
+        .form-check-input {
+            width: 1.1rem;
+            height: 1.1rem;
+            margin-top: 0.2rem;
+            padding: 0 !important;
+            background-color: #fff !important;
+        }
+
+        label {
+            display: inline-block;
+            margin-bottom: 0.45rem;
+            font-weight: 700;
+        }
+
+        .panel form,
+        .hero-panel form {
+            max-width: 100%;
+        }
+
+        .page-heading {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-heading h2,
+        .page-heading h1 {
+            margin-bottom: 0.65rem;
         }
 
         .table-modern {
@@ -477,7 +511,7 @@
             <a class="navbar-brand" href="/products/">Equip Exchange</a>
             <div class="d-flex gap-2 align-items-center">
                 <a href="/products/map/" class="btn btn-outline-light">
-                    Map
+                    地図
                 </a>
                 {% if request.user.is_authenticated %}
                 <a href="{% url 'mypage' %}" class="btn btn-outline-light">マイページ</a>
@@ -511,7 +545,7 @@
     <footer class="app-footer">
         <div class="container">
             <div class="breadcrumb-panel">
-                <div class="breadcrumb-label">Breadcrumb</div>
+                <div class="breadcrumb-label">現在地</div>
                 <ol class="app-breadcrumb">
                     {% if request.resolver_match.url_name == 'product_list' %}
                     <li><span class="current">商品一覧</span></li>

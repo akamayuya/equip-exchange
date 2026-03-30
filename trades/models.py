@@ -1,7 +1,9 @@
 from django.db import models
+from django.db.models import Q
 
 
 class Trade(models.Model):
+    ACTIVE_STATUSES = ("pending", "paid", "shipped")
     STATUS_CHOICES = [
         ("pending", "支払い待ち"),
         ("paid", "支払い済み"),
@@ -35,6 +37,9 @@ class Trade(models.Model):
         default="pending",
         verbose_name="ステータス",
     )
+    payment_method_brand = models.CharField(max_length=20, blank=True, verbose_name="支払いブランド")
+    payment_method_last4 = models.CharField(max_length=4, blank=True, verbose_name="支払い下4桁")
+    paid_at = models.DateTimeField(null=True, blank=True, verbose_name="支払い日時")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="取引開始日時")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
 
@@ -45,6 +50,13 @@ class Trade(models.Model):
         verbose_name = "取引"
         verbose_name_plural = "取引一覧"
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product"],
+                condition=Q(status__in=["pending", "paid", "shipped"]),
+                name="unique_active_trade_per_product",
+            )
+        ]
 
 
 class Message(models.Model):

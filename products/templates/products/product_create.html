@@ -2,20 +2,25 @@
 
 {% block content %}
 
-<h2>商品出品</h2>
+<section class="hero-panel mb-4">
+    <div class="eyebrow mb-3">商品出品</div>
+    <h2 class="display-title mb-3">新しい商品を登録する</h2>
+    <p class="muted-copy mb-0">商品情報を入力して、一覧と詳細ページに掲載します。所在地は法人情報に登録された会社住所を使用します。</p>
+</section>
 
-<!-- 修正: よりサンプル感のある表記、建物名はジオコーディングに含めない -->
-<div class="alert alert-info">
-    <strong>入力例（ジオコーディング用）</strong><br>
-    以下のように各欄に入力してください（建物名・部屋番号はジオコーディングには含めません）。<br>
-    郵便番号: 230-0076<br>
-    都道府県: 神奈川県<br>
-    市区町村: 横浜市 鶴見区<br>
-    町名: 馬場<br>
-    丁目・番地・号: 1-7-19<br>
-    建物名・部屋番号（任意）: 202（地図のピンには反映されません）
+<div class="soft-info mb-4">
+    <strong>所在地の扱い</strong><br>
+    マップのピン位置と会社所在地の表示には、アカウントに紐づく法人住所を使います。<br>
+    商品ごとの住所入力は不要です。法人所在地を変更したい場合は、法人情報を更新してください。
 </div>
 
+{% if company_address_error %}
+<div class="alert alert-warning mb-4">
+    {{ company_address_error }}
+</div>
+{% endif %}
+
+<section class="panel p-4">
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
@@ -25,17 +30,19 @@
         <div class="mb-3">
             {{ field.label_tag }}
             {{ field }}
-            <div style="color:red;">
+            <div class="text-danger small mt-1">
                 {{ field.errors }}
             </div>
         </div>
     {% endfor %}
 
+    <label for="id_images">商品画像</label>
     <input type="file" name="images" multiple class="form-control mb-3">
 
     <button type="submit" class="btn btn-success">
         出品する
     </button>
 </form>
+</section>
 
 {% endblock %}

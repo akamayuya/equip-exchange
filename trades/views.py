@@ -1,45 +1,94 @@
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from .models import Message, Trade
+
+
+def _redirect_unavailable_product(product, user):
+    latest_trade = product.trades.select_related("buyer", "seller").order_by("-created_at").first()
+    if latest_trade and user in [latest_trade.buyer, latest_trade.seller]:
+        return redirect("trade_detail", pk=latest_trade.pk)
+    return redirect("product_detail", pk=product.pk)
 
 
 @login_required
 def trade_create(request, product_pk):
     Product = apps.get_model("products", "Product")
-    product = get_object_or_404(Product, pk=product_pk)
+    product = get_object_or_404(Product.objects.select_related("seller"), pk=product_pk)
 
     # 自分の商品は購入不可
     if product.seller == request.user:
         return redirect("product_detail", pk=product_pk)
 
     if product.is_sold:
-        latest_trade = product.trades.order_by("-created_at").first()
-        if latest_trade and request.user in [latest_trade.buyer, latest_trade.seller]:
-            return redirect("trade_detail", pk=latest_trade.pk)
-        return redirect("product_detail", pk=product_pk)
+        return _redirect_unavailable_product(product, request.user)
 
     # 既に取引中の場合はスキップ
     existing = Trade.objects.filter(
-        product=product, status__in=["pending", "paid", "shipped"]
+        product=product, status__in=Trade.ACTIVE_STATUSES
     ).first()
     if existing:
         return redirect("trade_detail", pk=existing.pk)
 
-    if request.method == "POST":
-        trade = Trade.objects.create(
-            product=product,
-            buyer=request.user,
-            seller=product.seller,
-            price=product.price,
-        )
-        product.is_sold = True
-        product.save(update_fields=["is_sold"])
-        return redirect("product_detail", pk=product.pk)
+    payment_methods = request.user.payment_methods.all()
 
-    return render(request, "trades/trade_confirm.html", {"product": product})
+    if request.method == "POST":
+        payment_method = payment_methods.filter(pk=request.POST.get("payment_method")).first()
+        if payment_method is None:
+            return render(
+                request,
+                "trades/trade_confirm.html",
+                {
+                    "product": product,
+                    "payment_methods": payment_methods,
+                    "payment_error": "支払い方法を選択してください。",
+                },
+            )
+
+        try:
+            with transaction.atomic():
+                product = get_object_or_404(Product.objects.select_related("seller").select_for_update(), pk=product_pk)
+
+                if product.seller == request.user:
+                    return redirect("product_detail", pk=product_pk)
+
+                existing = Trade.objects.select_for_update().filter(
+                    product=product,
+                    status__in=Trade.ACTIVE_STATUSES,
+                ).order_by("-created_at").first()
+                if product.is_sold or existing:
+                    return _redirect_unavailable_product(product, request.user)
+
+                trade = Trade.objects.create(
+                    product=product,
+                    buyer=request.user,
+                    seller=product.seller,
+                    price=product.price,
+                    status="paid",
+                    payment_method_brand=payment_method.get_brand_display(),
+                    payment_method_last4=payment_method.last4,
+                    paid_at=timezone.now(),
+                )
+                product.is_sold = True
+                product.save(update_fields=["is_sold"])
+        except IntegrityError:
+            product = get_object_or_404(Product.objects.select_related("seller"), pk=product_pk)
+            return _redirect_unavailable_product(product, request.user)
+
+        return redirect("trade_detail", pk=trade.pk)
+
+    return render(
+        request,
+        "trades/trade_confirm.html",
+        {
+            "product": product,
+            "payment_methods": payment_methods,
+        },
+    )
 
 
 @login_required

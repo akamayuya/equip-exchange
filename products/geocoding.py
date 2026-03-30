@@ -1,15 +1,9 @@
 import requests
 
 
-def populate_product_coordinates(product):
-    address = (
-        product.geocode_address() if hasattr(product, "geocode_address") else product.location
-    )
-
+def _fetch_coordinates(address):
     if not address:
-        product.latitude = None
-        product.longitude = None
-        return False
+        return None
 
     url = "https://msearch.gsi.go.jp/address-search/AddressSearch"
     params = {"q": address}
@@ -19,27 +13,39 @@ def populate_product_coordinates(product):
         response.raise_for_status()
         data = response.json()
     except Exception:
-        product.latitude = None
-        product.longitude = None
-        return False
+        return None
 
     if not data or not isinstance(data, list):
-        product.latitude = None
-        product.longitude = None
-        return False
+        return None
 
     coords = data[0].get("geometry", {}).get("coordinates")
     if not coords or len(coords) != 2:
-        product.latitude = None
-        product.longitude = None
-        return False
+        return None
 
     try:
-        product.longitude = float(coords[0])
-        product.latitude = float(coords[1])
+        return float(coords[1]), float(coords[0])
     except (TypeError, ValueError):
+        return None
+
+
+def get_product_map_address(product):
+    seller = getattr(product, "seller", None)
+    seller_company = getattr(seller, "company", None) if seller else None
+    seller_address = getattr(seller_company, "address", "")
+    return seller_address or ""
+
+
+def get_product_map_coordinates(product):
+    address = get_product_map_address(product)
+    return _fetch_coordinates(address)
+
+
+def populate_product_coordinates(product):
+    coordinates = get_product_map_coordinates(product)
+    if not coordinates:
         product.latitude = None
         product.longitude = None
         return False
 
+    product.latitude, product.longitude = coordinates
     return True

@@ -2,24 +2,24 @@
 
 {% block content %}
 
-<h2>商品削除</h2>
+<section class="hero-panel mb-4">
+    <div class="eyebrow mb-3">商品削除</div>
+    <h2 class="display-title mb-3">商品を削除する</h2>
+    <p class="muted-copy mb-0">削除すると商品詳細と一覧から非表示になります。</p>
+</section>
 
-<p>本当に削除しますか？</p>
+<section class="panel p-4">
+    <div class="stream-note mb-4">
+        本当に「{{ product.name }}」を削除しますか。
+    </div>
 
-<p>{{ product.name }}</p>
-
-<form method="post">
-
-    {% csrf_token %}
-
-    <button class="btn btn-danger">
-        削除
-    </button>
-
-</form>
-
-<a href="{% url 'product_detail' product.id %}">
-    キャンセル
-</a>
+    <form method="post">
+        {% csrf_token %}
+        <div class="action-row">
+            <button class="btn btn-danger" type="submit">削除する</button>
+            <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-secondary">キャンセル</a>
+        </div>
+    </form>
+</section>
 
 {% endblock %}

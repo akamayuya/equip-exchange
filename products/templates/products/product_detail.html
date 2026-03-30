@@ -3,7 +3,7 @@
 {% block content %}
 
 <section class="hero-panel mb-4">
-    <div class="eyebrow mb-3">Equipment Detail</div>
+    <div class="eyebrow mb-3">商品詳細</div>
     <div class="detail-layout">
         <div>
             <h2 class="display-title mb-3">{{ product.name }}</h2>
@@ -33,6 +33,14 @@
                 <div class="meta-card">
                     <span>出品者</span>
                     <strong>{{ product.seller.username }}</strong>
+                </div>
+                <div class="meta-card">
+                    <span>法人名</span>
+                    <strong>{% if product.seller.company %}{{ product.seller.company.name }}{% else %}未設定{% endif %}</strong>
+                </div>
+                <div class="meta-card">
+                    <span>会社所在地</span>
+                    <strong>{% if product.seller.company and product.seller.company.address %}{{ product.seller.company.address }}{% else %}未登録{% endif %}</strong>
                 </div>
                 <div class="meta-card">
                     <span>状態</span>
@@ -139,7 +147,7 @@
                 <div class="text-danger mt-2">{{ comment_form.body.errors }}</div>
                 {% endif %}
             </div>
-            <div class="d-flex gap-2">
+            <div class="action-row">
                 <button type="submit" class="btn btn-primary">送信</button>
                 <button type="button" id="clear-reply" class="btn btn-outline-secondary d-none">返信指定を解除</button>
             </div>

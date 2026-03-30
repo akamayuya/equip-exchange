@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="hero-panel mb-4">
-  <div class="eyebrow mb-3">Trade Detail</div>
+  <div class="eyebrow mb-3">取引詳細</div>
   <h2 class="display-title mb-3">{{ trade.product.name }}</h2>
   <div class="meta-grid">
     <div class="meta-card"><span>価格</span><strong>¥{{ trade.price|floatformat:0 }}</strong></div>
@@ -12,9 +12,17 @@
 </section>
 
 <section class="panel p-4">
-<div class="soft-info mb-4">
-  取引の流れ: 支払い待ち → 支払い済み → 発送済み → 取引完了
-</div>
+  <div class="soft-info mb-4">
+    取引の流れ: 支払い済み → 発送済み → 取引完了
+  </div>
+
+{% if trade.payment_method_brand %}
+  <div class="meta-grid mb-4">
+    <div class="meta-card"><span>支払いブランド</span><strong>{{ trade.payment_method_brand }}</strong></div>
+    <div class="meta-card"><span>カード番号</span><strong>**** {{ trade.payment_method_last4 }}</strong></div>
+    <div class="meta-card"><span>支払い日時</span><strong>{% if trade.paid_at %}{{ trade.paid_at|date:"Y/m/d H:i" }}{% else %}未処理{% endif %}</strong></div>
+  </div>
+{% endif %}
 
 <div class="action-row mb-4">
   <a href="{% url 'product_detail' trade.product.pk %}" class="btn btn-outline-secondary">商品詳細を開く</a>
@@ -44,6 +52,8 @@
 </form>
 {% endif %}
 
-<a href="{% url 'mypage' %}" class="btn btn-secondary">マイページに戻る</a>
+<div class="action-row">
+  <a href="{% url 'mypage' %}" class="btn btn-secondary">マイページに戻る</a>
+</div>
 </section>
 {% endblock %}

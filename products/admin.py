@@ -6,9 +6,9 @@ from .models import Product, ProductComment, ProductImage
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-	list_display = ("name", "seller", "price", "is_sold", "created_at")
-	list_filter = ("is_sold", "condition", "prefecture")
-	search_fields = ("name", "seller__username", "seller__company_name")
+	list_display = ("product_name", "seller_name", "price", "sold_status", "created_at")
+	list_filter = ("is_sold", "condition")
+	search_fields = ("name", "seller__username", "seller__company__name", "seller__company__address")
 	readonly_fields = ("latitude", "longitude", "created_at")
 	fields = (
 		"name",
@@ -17,13 +17,6 @@ class ProductAdmin(admin.ModelAdmin):
 		"condition",
 		"seller",
 		"is_sold",
-		"postal_code",
-		"prefecture",
-		"city",
-		"town",
-		"block",
-		"address_line",
-		"location",
 		"latitude",
 		"longitude",
 		"created_at",
@@ -32,6 +25,18 @@ class ProductAdmin(admin.ModelAdmin):
 	def save_model(self, request, obj, form, change):
 		populate_product_coordinates(obj)
 		super().save_model(request, obj, form, change)
+
+	@admin.display(description="商品名", ordering="name")
+	def product_name(self, obj):
+		return obj.name
+
+	@admin.display(description="出品者", ordering="seller__username")
+	def seller_name(self, obj):
+		return obj.seller.username
+
+	@admin.display(description="状態", ordering="is_sold")
+	def sold_status(self, obj):
+		return "売却済み" if obj.is_sold else "出品中"
 
 
 @admin.register(ProductImage)

@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ProductCommentForm, ProductForm
-from .geocoding import populate_product_coordinates
+from .geocoding import get_product_map_address, get_product_map_coordinates, populate_product_coordinates
 from .models import Product, ProductComment, ProductImage
 
 
@@ -16,21 +16,23 @@ def _filter_products_by_query(queryset, query):
     return queryset.filter(
         Q(name__icontains=query)
         | Q(description__icontains=query)
-        | Q(location__icontains=query)
-        | Q(prefecture__icontains=query)
-        | Q(city__icontains=query)
-        | Q(town__icontains=query)
-        | Q(block__icontains=query)
-        | Q(address_line__icontains=query)
         | Q(seller__username__icontains=query)
-        | Q(seller__company_name__icontains=query)
+        | Q(seller__company__name__icontains=query)
+        | Q(seller__company__address__icontains=query)
     )
+
+
+def _company_address_error(user):
+    company = getattr(user, "company", None)
+    if company and company.address:
+        return None
+    return "商品を登録するには、先に法人情報へ会社所在地を登録してください。"
 
 
 def product_list(request):
     search_query = request.GET.get("q", "").strip()
     products = _filter_products_by_query(
-        Product.objects.select_related("seller").order_by("is_sold", "-created_at"),
+        Product.objects.select_related("seller", "seller__company").order_by("is_sold", "-created_at"),
         search_query,
     )
     return render(
@@ -45,12 +47,16 @@ def product_list(request):
 
 @login_required
 def product_create(request):
+    company_address_error = _company_address_error(request.user)
 
     if request.method == "POST":
 
         form = ProductForm(request.POST)
 
-        if form.is_valid():
+        if company_address_error:
+            form.add_error(None, company_address_error)
+
+        if not company_address_error and form.is_valid():
 
             product = form.save(commit=False)
             product.seller = request.user
@@ -69,7 +75,11 @@ def product_create(request):
     else:
         form = ProductForm()
 
-    return render(request, "products/product_create.html", {"form": form})
+    return render(
+        request,
+        "products/product_create.html",
+        {"form": form, "company_address_error": company_address_error},
+    )
 
 
 def product_detail(request, pk):
@@ -159,11 +169,16 @@ def product_edit(request, pk):
     if product.seller != request.user:
         return redirect("product_list")
 
+    company_address_error = _company_address_error(request.user)
+
     if request.method == "POST":
 
         form = ProductForm(request.POST, instance=product)
 
-        if form.is_valid():
+        if company_address_error:
+            form.add_error(None, company_address_error)
+
+        if not company_address_error and form.is_valid():
             # 変更を保存する前に緯度経度を再取得
             product = form.save(commit=False)
 
@@ -181,6 +196,7 @@ def product_edit(request, pk):
         {
             "form": form,
             "product": product,
+            "company_address_error": company_address_error,
         },
     )
 
@@ -205,17 +221,43 @@ def product_map(request):
     search_query = request.GET.get("q", "").strip()
 
     products = _filter_products_by_query(
-        Product.objects.select_related("seller").filter(
-            is_sold=False, latitude__isnull=False, longitude__isnull=False
-        ),
+        Product.objects.select_related("seller", "seller__company").filter(is_sold=False),
         search_query,
     )
+
+    address_cache = {}
+    map_products = []
+
+    for product in products:
+        map_address = get_product_map_address(product)
+        if not map_address:
+            continue
+
+        coordinates = address_cache.get(map_address)
+        if coordinates is None:
+            coordinates = get_product_map_coordinates(product)
+            address_cache[map_address] = coordinates
+
+        if not coordinates:
+            continue
+
+        latitude, longitude = coordinates
+        map_products.append(
+            {
+                "id": product.pk,
+                "name": product.name,
+                "company_name": product.seller.company.name if product.seller.company else product.seller.username,
+                "address": map_address,
+                "latitude": latitude,
+                "longitude": longitude,
+            }
+        )
 
     return render(
         request,
         "products/product_map.html",
         {
-            "products": products,
+            "map_products": map_products,
             "search_query": search_query,
         },
     )

@@ -2,17 +2,24 @@
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <div>
-    <h2 class="mb-1">チャット</h2>
-    <p class="mb-0">商品: {{ trade.product.name }} / ステータス: {{ trade.get_status_display }}</p>
+<section class="hero-panel mb-4">
+  <div class="eyebrow mb-3">取引チャット</div>
+  <h2 class="display-title mb-3">{{ trade.product.name }}</h2>
+  <div class="meta-grid">
+    <div class="meta-card"><span>ステータス</span><strong>{{ trade.get_status_display }}</strong></div>
+    <div class="meta-card"><span>購入者</span><strong>{{ trade.buyer.username }}</strong></div>
+    <div class="meta-card"><span>出品者</span><strong>{{ trade.seller.username }}</strong></div>
   </div>
+</section>
+
+<section class="panel p-4">
+<div class="action-row mb-3">
   <a href="{% url 'trade_detail' trade.pk %}" class="btn btn-secondary">取引詳細へ戻る</a>
 </div>
 
-<div id="message-list" class="border rounded p-3 mb-3" style="height: 420px; overflow-y: auto; background: #fafafa;">
+<div id="message-list" class="panel p-3 mb-3" style="height: 420px; overflow-y: auto; background: rgba(255,255,255,0.72);">
   {% for message in messages %}
-  <div class="mb-3" data-message-id="{{ message.id }}">
+  <div class="stream-item" data-message-id="{{ message.id }}">
     <div>
       <strong>{{ message.sender.username }}</strong>
       <small class="text-muted">{{ message.created_at|date:"Y/m/d H:i" }}</small>
@@ -24,13 +31,14 @@
   {% endfor %}
 </div>
 
-<form method="post" class="mb-3">
+<form method="post" class="mb-0">
   {% csrf_token %}
   <div class="mb-2">
     <textarea name="body" class="form-control" rows="3" placeholder="メッセージを入力してください"></textarea>
   </div>
   <button type="submit" class="btn btn-primary">送信</button>
 </form>
+</section>
 
 <script>
   const messageList = document.getElementById("message-list");

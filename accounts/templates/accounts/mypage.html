@@ -1,11 +1,54 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="hero-panel mb-4">
-  <div class="eyebrow mb-3">My Page</div>
-  <p class="mb-2">法人名：{{ request.user.company_name|default:"未登録" }}</p>
+  <div class="eyebrow mb-3">マイページ</div>
+  <p class="mb-2">法人名：{{ company.name|default:"未登録" }}</p>
+  <p class="mb-2">法人番号：{{ company.corporate_number|default:"未登録" }}</p>
+  <p class="mb-2">会社所在地：{{ company.address|default:"未登録" }}</p>
+  <p class="mb-2">審査状況：{% if company_is_verified %}承認済み{% else %}審査中{% endif %}</p>
   <p class="mb-2">氏名：{% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}未登録{% endif %}</p>
   <p class="mb-2">ニックネーム：{{ request.user.username }}</p>
-  <p class="muted-copy mb-0">購入、販売、出品を1画面で確認できます。</p>
+  <p class="muted-copy mb-0">購入、販売、出品、支払い方法を1画面で確認できます。</p>
+</section>
+
+<section class="panel p-4 mb-4">
+  <div class="d-flex justify-content-between align-items-center gap-3 mb-3 flex-wrap">
+    <h3 class="section-title mb-0">支払い方法</h3>
+    <a href="{% url 'payment_method_create' %}" class="btn btn-primary">＋ カードを登録</a>
+  </div>
+
+  {% if payment_methods %}
+    <div class="table-responsive">
+    <table class="table-modern">
+      <thead>
+        <tr><th>ブランド</th><th>カード番号</th><th>有効期限</th><th>名義</th><th>状態</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        {% for payment_method in payment_methods %}
+        <tr>
+          <td>{{ payment_method.get_brand_display }}</td>
+          <td>{{ payment_method.masked_number }}</td>
+          <td>{{ payment_method.exp_month|stringformat:"02d" }}/{{ payment_method.exp_year }}</td>
+          <td>{{ payment_method.cardholder_name }}</td>
+          <td>{% if payment_method.is_default %}デフォルト{% else %}登録済み{% endif %}</td>
+          <td>
+            {% if not payment_method.is_default %}
+            <form method="post" action="{% url 'payment_method_set_default' payment_method.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-secondary">デフォルトにする</button>
+            </form>
+            {% else %}
+            <span class="text-muted small">利用中</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="stream-note">登録済みの支払い方法はありません。購入前にカードを1枚登録してください。</div>
+  {% endif %}
 </section>
 
 <section class="panel p-4 mb-4">
