@@ -6,7 +6,7 @@
   <p class="mb-2">法人番号：{{ company.corporate_number|default:"未登録" }}</p>
   <p class="mb-2">会社所在地：{{ company.address|default:"未登録" }}</p>
   <p class="mb-2">審査状況：{% if company_is_verified %}承認済み{% else %}審査中{% endif %}</p>
-  <p class="mb-2">氏名：{% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}未登録{% endif %}</p>
+  <p class="mb-2">氏名：{% if request.user.japanese_full_name %}{{ request.user.japanese_full_name }}{% else %}未登録{% endif %}</p>
   <p class="mb-2">ニックネーム：{{ request.user.username }}</p>
   <p class="muted-copy mb-0">購入、販売、出品、支払い方法を1画面で確認できます。</p>
 </section>
@@ -114,14 +114,15 @@
     <div class="table-responsive">
     <table class="table-modern">
       <thead>
-        <tr><th>商品名</th><th>価格</th><th>状態</th><th>操作</th></tr>
+        <tr><th>商品名</th><th>価格</th><th>コンディション</th><th>販売状況</th><th>操作</th></tr>
       </thead>
       <tbody>
         {% for product in my_products %}
         <tr>
           <td>{{ product.name }}</td>
           <td>¥{{ product.price|floatformat:0 }}</td>
-          <td>{% if product.is_sold %}売却済み{% else %}出品中{% endif %}</td>
+          <td>{{ product.get_condition_display }}</td>
+          <td>{% if not product.is_sold %}出品中{% elif product.has_active_trade %}取引中{% else %}売却済み{% endif %}</td>
           <td>
             <a href="{% url 'product_detail' product.pk %}">詳細</a> |
             <a href="{% url 'product_edit' product.pk %}">編集</a>

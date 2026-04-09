@@ -3,9 +3,8 @@ from django.db.models import Q
 
 
 class Trade(models.Model):
-    ACTIVE_STATUSES = ("pending", "paid", "shipped")
+    ACTIVE_STATUSES = ("paid", "shipped")
     STATUS_CHOICES = [
-        ("pending", "支払い待ち"),
         ("paid", "支払い済み"),
         ("shipped", "発送済み"),
         ("completed", "取引完了"),
@@ -34,7 +33,7 @@ class Trade(models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default="pending",
+        default="paid",
         verbose_name="ステータス",
     )
     payment_method_brand = models.CharField(max_length=20, blank=True, verbose_name="支払いブランド")
@@ -53,7 +52,7 @@ class Trade(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["product"],
-                condition=Q(status__in=["pending", "paid", "shipped"]),
+                condition=Q(status__in=["paid", "shipped"]),
                 name="unique_active_trade_per_product",
             )
         ]

@@ -36,7 +36,11 @@ class ProductAdmin(admin.ModelAdmin):
 
 	@admin.display(description="状態", ordering="is_sold")
 	def sold_status(self, obj):
-		return "売却済み" if obj.is_sold else "出品中"
+		if not obj.is_sold:
+			return "出品中"
+		if obj.trades.filter(status__in=("pending", "paid", "shipped")).exists():
+			return "取引中"
+		return "売却済み"
 
 
 @admin.register(ProductImage)

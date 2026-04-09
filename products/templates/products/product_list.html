@@ -3,7 +3,12 @@
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-4">
-    <h2 class="mb-0">商品一覧</h2>
+    <div>
+        <h2 class="mb-0">商品一覧</h2>
+        {% if selected_company %}
+        <div class="muted-copy small mt-2">法人で絞り込み中: {{ selected_company.name }}</div>
+        {% endif %}
+    </div>
 
     <div class="action-row align-items-center">
         <a href="/products/create/" class="btn btn-primary">商品を出品</a>
@@ -27,7 +32,7 @@
         <div class="col-lg-3">
             <div class="action-row justify-content-lg-end">
                 <button type="submit" class="btn btn-primary">検索する</button>
-                {% if search_query %}
+                {% if search_query or selected_company %}
                 <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">クリア</a>
                 {% endif %}
             </div>
@@ -35,11 +40,19 @@
     </form>
 </section>
 
+{% if selected_company %}
+<div class="soft-info mb-4">
+    {{ selected_company.name }} が出品している商品だけを表示しています。
+</div>
+{% endif %}
+
 {% if not products %}
 
 <div class="alert alert-secondary mt-3">
     {% if search_query %}
     「{{ search_query }}」に一致する商品はありません。
+    {% elif selected_company %}
+    {{ selected_company.name }} の出品商品はまだありません。
     {% else %}
     現在登録されている商品はありません。
     {% endif %}
@@ -49,22 +62,34 @@
 
 <section class="product-grid">
     {% for product in products %}
-    <article class="card product-card">
+    <article class="card product-card{% if request.user == product.seller %} product-card--mine{% endif %}">
+        {% for image in product.images.all|slice:":1" %}
+        <img src="{{ image.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 180px; object-fit: cover;">
+        {% endfor %}
         <div class="card-body p-4 d-flex flex-column gap-3">
             <div class="d-flex justify-content-between align-items-start gap-3">
                 <h5 class="card-title mb-0">
                     <a href="{% url 'product_detail' product.id %}">{{ product.name }}</a>
                 </h5>
-                {% if product.is_sold %}
-                <span class="tag-pill sold">取引中・売却済み</span>
+                {% if not product.is_sold %}
+                <span class="tag-pill available">出品中</span>
+                {% elif product.has_active_trade %}
+                <span class="tag-pill sold">取引中</span>
                 {% else %}
-                <span class="tag-pill available">購入可能</span>
+                <span class="tag-pill sold">売却済み</span>
                 {% endif %}
             </div>
 
-            <div class="muted-copy small">
-                出品者: {{ product.seller.username }}
+            {% if request.user == product.seller %}
+            <div class="owner-badge">
+                <span>自分の出品</span>
+                <a href="{% url 'product_edit' product.id %}" class="btn btn-sm btn-outline-secondary">編集</a>
             </div>
+            {% else %}
+            <div class="muted-copy small">
+                出品者: {{ product.seller.username }} ｜ {{ product.get_condition_display }}
+            </div>
+            {% endif %}
 
             <div class="d-flex justify-content-between align-items-end mt-auto">
                 <div>

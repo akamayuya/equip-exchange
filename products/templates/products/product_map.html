@@ -125,12 +125,12 @@
     }
 </style>
 
-{% if not map_products %}
+{% if not map_companies %}
 <div class="stream-note mb-4">
     {% if search_query %}
-    「{{ search_query }}」に一致する地図表示可能な商品はありません。
+    「{{ search_query }}」に一致する地図表示可能な法人はありません。
     {% else %}
-    地図表示できる商品はありません。
+    地図表示できる法人はありません。
     {% endif %}
 </div>
 {% endif %}
@@ -160,41 +160,44 @@ var productIcon = L.divIcon({
 
 
 // Django → JS データ変換（null 安全に出力）
-var products = [
-{% for p in map_products %}
+var companies = [
+{% for company in map_companies %}
 {
-    name: "{{ p.name|escapejs }}",
-    companyName: "{{ p.company_name|escapejs }}",
-    lat: {{ p.latitude|default_if_none:"null" }},
-    lng: {{ p.longitude|default_if_none:"null" }},
-    address: "{{ p.address|escapejs }}",
-    url: "{% url 'product_detail' p.id %}"
+    companyId: {{ company.company_id }},
+    companyName: "{{ company.company_name|escapejs }}",
+    lat: {{ company.latitude|default_if_none:"null" }},
+    lng: {{ company.longitude|default_if_none:"null" }},
+    address: "{{ company.address|escapejs }}",
+    productCount: {{ company.product_count }},
+    latestProductName: "{{ company.latest_product_name|escapejs }}",
+    url: "{% url 'product_list' %}?company={{ company.company_id }}"
 }{% if not forloop.last %},{% endif %}
 {% endfor %}
 ];
 
 // デバッグ
-console.log("products for map:", products);
+console.log("companies for map:", companies);
 
 // ピン表示
-products.forEach(function(product){
+companies.forEach(function(company){
 
     // 厳密な null チェック（0 を許容、文字列 "null" を回避）
-    if (product.lat !== null && product.lng !== null) {
+    if (company.lat !== null && company.lng !== null) {
 
         // 数値として扱う（テンプレートからは数値または null が来る想定）
-        var lat = Number(product.lat);
-        var lng = Number(product.lng);
+        var lat = Number(company.lat);
+        var lng = Number(company.lng);
 
         if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
             var marker = L.marker([lat, lng], { icon: productIcon }).addTo(map);
 
             marker.bindPopup(
                 '<div class="map-popup">' +
-                    '<span class="map-popup-title">' + product.name + '</span>' +
-                    '<div class="map-popup-address">' + product.companyName + '</div>' +
-                    '<div class="map-popup-address">' + product.address + '</div>' +
-                    '<a class="map-popup-link" href="' + product.url + '">商品詳細を見る</a>' +
+                    '<span class="map-popup-title">' + company.companyName + '</span>' +
+                    '<div class="map-popup-address">' + company.address + '</div>' +
+                    '<div class="map-popup-address">出品中の商品 ' + company.productCount + ' 件</div>' +
+                    '<div class="map-popup-address">最新出品: ' + company.latestProductName + '</div>' +
+                    '<a class="map-popup-link" href="' + company.url + '">この法人の商品一覧を見る</a>' +
                 '</div>'
             );
 
@@ -207,12 +210,12 @@ products.forEach(function(product){
 
 });
 
-if (products.length > 0) {
+if (companies.length > 0) {
     var bounds = [];
-    products.forEach(function(product) {
-        if (product.lat !== null && product.lng !== null) {
-            var lat = Number(product.lat);
-            var lng = Number(product.lng);
+    companies.forEach(function(company) {
+        if (company.lat !== null && company.lng !== null) {
+            var lat = Number(company.lat);
+            var lng = Number(company.lng);
             if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
                 bounds.push([lat, lng]);
             }

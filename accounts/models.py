@@ -37,6 +37,10 @@ class User(AbstractUser):
         verbose_name = "ユーザー"
         verbose_name_plural = "ユーザー"
 
+    def japanese_full_name(self):
+        parts = [part for part in [self.last_name, self.first_name] if part]
+        return " ".join(parts).strip()
+
     def __str__(self):
         return self.username
 

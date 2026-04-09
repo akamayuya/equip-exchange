@@ -2,38 +2,50 @@
 {% block content %}
 <section class="hero-panel mb-4">
   <div class="eyebrow mb-3">取引詳細</div>
-  <h2 class="display-title mb-3">{{ trade.product.name }}</h2>
-  <div class="meta-grid">
-    <div class="meta-card"><span>価格</span><strong>¥{{ trade.price|floatformat:0 }}</strong></div>
-    <div class="meta-card"><span>ステータス</span><strong>{{ trade.get_status_display }}</strong></div>
-    <div class="meta-card"><span>購入者ニックネーム</span><strong>{{ trade.buyer.username }}</strong></div>
-    <div class="meta-card"><span>出品者</span><strong>{{ trade.seller.username }}</strong></div>
+  <div class="d-flex gap-4 align-items-start flex-wrap">
+    {% for image in trade.product.images.all|slice:":1" %}
+    <img src="{{ image.image.url }}" alt="{{ trade.product.name }}" style="width: 120px; height: 120px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--line);">
+    {% endfor %}
+    <div class="flex-grow-1">
+      <h2 class="display-title mb-3">{{ trade.product.name }}</h2>
+      <div class="meta-grid">
+        <div class="meta-card"><span>取引価格</span><strong>¥{{ trade.price|floatformat:0 }}</strong></div>
+        <div class="meta-card"><span>ステータス</span><strong>{{ trade.get_status_display }}</strong></div>
+        <div class="meta-card"><span>購入者</span><strong>{{ trade.buyer.username }}</strong></div>
+        <div class="meta-card"><span>出品者</span><strong>{{ trade.seller.username }}</strong></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="panel p-4">
-  <div class="soft-info mb-4">
-    取引の流れ: 支払い済み → 発送済み → 取引完了
-  </div>
+<section class="panel p-4 mb-4">
+  <h3 class="section-title">取引の進行状況</h3>
 
+  {% if trade.status == "cancelled" %}
+  <div class="alert alert-danger mb-0">
+    <strong>この取引はキャンセルされました。</strong>商品は出品中に戻っています。
+  </div>
+  {% else %}
+  <div class="d-flex align-items-center flex-wrap gap-3 mb-3">
+    <span class="badge rounded-pill bg-success px-3 py-2">① 支払い済み</span>
+    <span class="text-muted fs-5">→</span>
+    <span class="badge rounded-pill {% if trade.status == 'shipped' or trade.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %} px-3 py-2">② 発送済み</span>
+    <span class="text-muted fs-5">→</span>
+    <span class="badge rounded-pill {% if trade.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %} px-3 py-2">③ 取引完了</span>
+  </div>
+  <div class="soft-info">
+    支払い済みの段階では、購入者・出品者ともにキャンセルできます。
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel p-4">
 {% if trade.payment_method_brand %}
   <div class="meta-grid mb-4">
     <div class="meta-card"><span>支払いブランド</span><strong>{{ trade.payment_method_brand }}</strong></div>
     <div class="meta-card"><span>カード番号</span><strong>**** {{ trade.payment_method_last4 }}</strong></div>
     <div class="meta-card"><span>支払い日時</span><strong>{% if trade.paid_at %}{{ trade.paid_at|date:"Y/m/d H:i" }}{% else %}未処理{% endif %}</strong></div>
   </div>
-{% endif %}
-
-<div class="action-row mb-4">
-  <a href="{% url 'product_detail' trade.product.pk %}" class="btn btn-outline-secondary">商品詳細を開く</a>
-</div>
-
-{% if request.user == trade.buyer and trade.status == "pending" %}
-<form method="post" action="{% url 'trade_update_status' trade.pk %}" class="mb-2">
-  {% csrf_token %}
-  <input type="hidden" name="status" value="paid">
-  <button type="submit" class="btn btn-primary">支払い済みにする</button>
-</form>
 {% endif %}
 
 {% if request.user == trade.seller and trade.status == "paid" %}
@@ -52,7 +64,19 @@
 </form>
 {% endif %}
 
+{% if trade.status == "paid" %}
+<form method="post" action="{% url 'trade_update_status' trade.pk %}" class="mb-2">
+  {% csrf_token %}
+  <input type="hidden" name="status" value="cancelled">
+  <button type="submit" class="btn btn-danger" onclick="return confirm('本当にキャンセルしますか？')">取引をキャンセル</button>
+</form>
+{% endif %}
+
 <div class="action-row">
+  {% if trade.status != "cancelled" %}
+  <a href="{% url 'chat' trade.pk %}" class="btn btn-primary">チャットを開く</a>
+  {% endif %}
+  <a href="{% url 'product_detail' trade.product.pk %}" class="btn btn-outline-secondary">商品詳細を開く</a>
   <a href="{% url 'mypage' %}" class="btn btn-secondary">マイページに戻る</a>
 </div>
 </section>

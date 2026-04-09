@@ -1,8 +1,10 @@
 from django.apps import apps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
+
+from accounts.models import Company
 
 from .forms import ProductCommentForm, ProductForm
 from .geocoding import get_product_map_address, get_product_map_coordinates, populate_product_coordinates
@@ -30,17 +32,35 @@ def _company_address_error(user):
 
 
 def product_list(request):
+    Trade = apps.get_model("trades", "Trade")
     search_query = request.GET.get("q", "").strip()
+    company_id = request.GET.get("company")
+    selected_company = None
+    products = Product.objects.select_related("seller", "seller__company").prefetch_related("images").annotate(
+        has_active_trade=Exists(
+            Trade.objects.filter(
+                product=OuterRef("pk"),
+                status__in=Trade.ACTIVE_STATUSES,
+            )
+        )
+    )
+
+    if company_id:
+        selected_company = get_object_or_404(Company, pk=company_id)
+        products = products.filter(seller__company=selected_company)
+
     products = _filter_products_by_query(
-        Product.objects.select_related("seller", "seller__company").order_by("is_sold", "-created_at"),
+        products.order_by("is_sold", "-created_at"),
         search_query,
     )
+
     return render(
         request,
         "products/product_list.html",
         {
             "products": products,
             "search_query": search_query,
+            "selected_company": selected_company,
         },
     )
 
@@ -83,8 +103,8 @@ def product_create(request):
 
 
 def product_detail(request, pk):
-
-    product = get_object_or_404(Product, pk=pk)
+    Trade = apps.get_model("trades", "Trade")
+    product = get_object_or_404(Product.objects.select_related("seller", "seller__company"), pk=pk)
 
     existing_trade = None
     trade_messages = []
@@ -95,11 +115,11 @@ def product_detail(request, pk):
 
         existing_trade = (
             product.trades.filter(
-                status__in=["pending", "paid", "shipped", "completed"],
+                status__in=Trade.ACTIVE_STATUSES,
                 seller=request.user,
             ).first()
             or product.trades.filter(
-                status__in=["pending", "paid", "shipped", "completed"],
+                status__in=Trade.ACTIVE_STATUSES,
                 buyer=request.user,
             ).first()
         )
@@ -134,11 +154,11 @@ def product_detail(request, pk):
     if request.user.is_authenticated:
         existing_trade = (
             product.trades.filter(
-                status__in=["pending", "paid", "shipped", "completed"],
+                status__in=Trade.ACTIVE_STATUSES,
                 seller=request.user,
             ).first()
             or product.trades.filter(
-                status__in=["pending", "paid", "shipped", "completed"],
+                status__in=Trade.ACTIVE_STATUSES,
                 buyer=request.user,
             ).first()
         )
@@ -210,6 +230,11 @@ def product_delete(request, pk):
     if product.seller != request.user:
         return redirect("product_list")
 
+    # 取引中・売却済みの商品は削除不可
+    if product.is_sold:
+        messages.error(request, "取引中または売却済みの商品は削除できません。")
+        return redirect("product_detail", pk=pk)
+
     if request.method == "POST":
         product.delete()
         return redirect("product_list")
@@ -221,14 +246,18 @@ def product_map(request):
     search_query = request.GET.get("q", "").strip()
 
     products = _filter_products_by_query(
-        Product.objects.select_related("seller", "seller__company").filter(is_sold=False),
+        Product.objects.select_related("seller", "seller__company").filter(is_sold=False).order_by("seller__company_id", "-created_at", "-id"),
         search_query,
     )
 
     address_cache = {}
-    map_products = []
+    company_markers = {}
 
     for product in products:
+        company = getattr(product.seller, "company", None)
+        if not company:
+            continue
+
         map_address = get_product_map_address(product)
         if not map_address:
             continue
@@ -242,22 +271,27 @@ def product_map(request):
             continue
 
         latitude, longitude = coordinates
-        map_products.append(
+        marker = company_markers.setdefault(
+            company.pk,
             {
-                "id": product.pk,
-                "name": product.name,
-                "company_name": product.seller.company.name if product.seller.company else product.seller.username,
+                "company_id": company.pk,
+                "company_name": company.name or product.seller.username,
                 "address": map_address,
                 "latitude": latitude,
                 "longitude": longitude,
-            }
+                "product_count": 0,
+                "latest_product_name": product.name,
+            },
         )
+        marker["product_count"] += 1
+
+    map_companies = list(company_markers.values())
 
     return render(
         request,
         "products/product_map.html",
         {
-            "map_products": map_products,
+            "map_companies": map_companies,
             "search_query": search_query,
         },
     )

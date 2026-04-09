@@ -19,9 +19,13 @@
         </div>
 
         <aside class="panel p-4 h-100">
-            {% if product.is_sold %}
+            {% if existing_trade %}
+            <div class="alert alert-info">
+                この商品は現在取引中です。
+            </div>
+            {% elif product.is_sold %}
             <div class="alert alert-warning">
-                この商品は現在取引中、または売却済みです。
+                この商品は売却済みです。
             </div>
             {% endif %}
 
@@ -43,14 +47,20 @@
                     <strong>{% if product.seller.company and product.seller.company.address %}{{ product.seller.company.address }}{% else %}未登録{% endif %}</strong>
                 </div>
                 <div class="meta-card">
-                    <span>状態</span>
+                    <span>販売状況</span>
                     <strong>
-                        {% if product.is_sold %}
-                        取引中・売却済み
+                        {% if not product.is_sold %}
+                        出品中
+                        {% elif existing_trade %}
+                        取引中
                         {% else %}
-                        購入可能
+                        売却済み
                         {% endif %}
                     </strong>
+                </div>
+                <div class="meta-card">
+                    <span>コンディション</span>
+                    <strong>{{ product.get_condition_display }}</strong>
                 </div>
                 <div class="meta-card">
                     <span>コメント</span>
@@ -69,7 +79,9 @@
 
                 {% if request.user == product.seller %}
                 <a href="{% url 'product_edit' product.id %}" class="btn btn-warning">編集</a>
+                {% if not product.is_sold %}
                 <a href="{% url 'product_delete' product.id %}" class="btn btn-danger">削除</a>
+                {% endif %}
                 {% endif %}
 
                 <a href="/products/" class="btn btn-outline-secondary">一覧に戻る</a>

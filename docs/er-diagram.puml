@@ -1,0 +1,150 @@
+@startuml
+' Render with PlantUML extension or CLI.
+
+left to right direction
+hide methods
+hide stereotypes
+skinparam backgroundColor #FCFBF7
+skinparam shadowing false
+skinparam roundcorner 14
+skinparam defaultFontName BIZ UDPGothic
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam packageTitleFontStyle bold
+skinparam entity {
+  BackgroundColor #FDFCF8
+  BorderColor #4D7A72
+  FontColor #1C2B28
+}
+skinparam package {
+  BackgroundColor #F4EFE4
+  BorderColor #8EA79F
+  FontColor #1C2B28
+}
+
+package "Accounts" {
+  entity "Company" as Company {
+    * id : int
+    --
+    name : string
+    corporate_number : string <<UK>>
+    address : string
+    is_verified : boolean
+    created_at : datetime
+  }
+
+  entity "User" as User {
+    * id : int
+    --
+    company_id : int <<FK>>
+    username : string
+    first_name : string
+    last_name : string
+    email : string
+    is_company_admin : boolean
+    is_staff : boolean
+    is_active : boolean
+    date_joined : datetime
+  }
+
+  entity "PaymentMethod" as PaymentMethod {
+    * id : int
+    --
+    user_id : int <<FK>>
+    brand : string
+    last4 : string
+    exp_month : int
+    exp_year : int
+    token : string <<UK>>
+    is_default : boolean
+    created_at : datetime
+  }
+}
+
+package "Products" {
+  entity "Product" as Product {
+    * id : int
+    --
+    seller_id : int <<FK>>
+    name : string
+    price : int
+    condition : string
+    location : string
+    is_sold : boolean
+    created_at : datetime
+  }
+
+  entity "ProductImage" as ProductImage {
+    * id : int
+    --
+    product_id : int <<FK>>
+    image : string
+    created_at : datetime
+  }
+
+  entity "ProductComment" as ProductComment {
+    * id : int
+    --
+    product_id : int <<FK>>
+    user_id : int <<FK>>
+    reply_to_id : int <<FK>>
+    body : text
+    created_at : datetime
+  }
+}
+
+package "Trades" {
+  entity "Trade" as Trade {
+    * id : int
+    --
+    product_id : int <<FK>>
+    buyer_id : int <<FK>>
+    seller_id : int <<FK>>
+    price : int
+    status : string
+    payment_method_brand : string
+    payment_method_last4 : string
+    paid_at : datetime
+    created_at : datetime
+    updated_at : datetime
+  }
+
+  entity "Message" as Message {
+    * id : int
+    --
+    trade_id : int <<FK>>
+    sender_id : int <<FK>>
+    body : text
+    created_at : datetime
+  }
+}
+
+Company ||--o{ User : belongs_to
+User ||--o{ PaymentMethod : registers
+User ||--o{ Product : lists
+Product ||--o{ ProductImage : has
+Product ||--o{ ProductComment : receives
+User ||--o{ ProductComment : writes
+Product ||--o{ Trade : transacts
+User ||--o{ Trade : buyer
+User ||--o{ Trade : seller
+Trade ||--o{ Message : contains
+User ||--o{ Message : sends
+
+note bottom of Trade
+  Active trade constraint:
+  paid / shipped の間は
+  同一商品で 1 件だけ有効
+end note
+
+note bottom of Product
+  詳細住所は Product に持つが
+  会社所在地の主責務は Company
+end note
+
+note right of ProductComment
+  reply_to_id により
+  ProductComment は自己参照する
+end note
+
+@enduml

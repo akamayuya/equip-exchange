@@ -1,8 +1,10 @@
+from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import LoginForm, PaymentMethodForm, SignUpForm
@@ -69,7 +71,15 @@ def mypage(request):
     user = request.user
     company = user.company
     # 自分の出品
-    my_products = user.products.all().order_by("-created_at")
+    Trade = apps.get_model("trades", "Trade")
+    my_products = user.products.annotate(
+        has_active_trade=Exists(
+            Trade.objects.filter(
+                product=OuterRef("pk"),
+                status__in=Trade.ACTIVE_STATUSES,
+            )
+        )
+    ).order_by("-created_at")
     # 自分の購入取引
     my_purchases = user.purchases.select_related("product", "seller").order_by("-created_at")
     # 自分の販売取引

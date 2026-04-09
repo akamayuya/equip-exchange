@@ -9,7 +9,9 @@ from .models import Message, Trade
 
 
 def _redirect_unavailable_product(product, user):
-    latest_trade = product.trades.select_related("buyer", "seller").order_by("-created_at").first()
+    latest_trade = product.trades.filter(
+        status__in=Trade.ACTIVE_STATUSES,
+    ).select_related("buyer", "seller").order_by("-created_at").first()
     if latest_trade and user in [latest_trade.buyer, latest_trade.seller]:
         return redirect("trade_detail", pk=latest_trade.pk)
     return redirect("product_detail", pk=product.pk)
@@ -93,7 +95,10 @@ def trade_create(request, product_pk):
 
 @login_required
 def trade_detail(request, pk):
-    trade = get_object_or_404(Trade, pk=pk)
+    trade = get_object_or_404(
+        Trade.objects.select_related("product", "buyer", "seller").prefetch_related("product__images"),
+        pk=pk,
+    )
 
     # 購入者または出品者のみ閲覧可
     if request.user not in [trade.buyer, trade.seller]:
@@ -110,19 +115,23 @@ def trade_update_status(request, pk):
         new_status = request.POST.get("status")
         allowed = []
 
-        # 購入者は支払い済みに変更可
-        if request.user == trade.buyer and trade.status == "pending":
-            allowed = ["paid"]
-        # 出品者は支払い確認後に発送済みに変更可
-        elif request.user == trade.seller and trade.status == "paid":
-            allowed = ["shipped"]
+        # 出品者は支払い確認後に発送済み or キャンセルに変更可
+        if request.user == trade.seller and trade.status == "paid":
+            allowed = ["shipped", "cancelled"]
+        # 購入者は支払い済みの取引をキャンセル可
+        elif request.user == trade.buyer and trade.status == "paid":
+            allowed = ["cancelled"]
         # 購入者は「取引完了」に変更可
         elif request.user == trade.buyer and trade.status == "shipped":
             allowed = ["completed"]
 
         if new_status in allowed:
             trade.status = new_status
-            trade.save()
+            trade.save(update_fields=["status", "updated_at"])
+
+            if new_status == "cancelled":
+                trade.product.is_sold = False
+                trade.product.save(update_fields=["is_sold"])
 
     return redirect("trade_detail", pk=pk)
 

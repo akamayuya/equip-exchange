@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from .admin import UserAdminCreationForm, UserAdminForm
 from .forms import SignUpForm
-from .models import Company
+from .models import Company, User
 
 
 class SignUpFormTests(TestCase):
@@ -55,3 +55,15 @@ class UserAdminFormTests(TestCase):
 		form = UserAdminForm(instance=user)
 
 		self.assertIsInstance(form.fields["password"], ReadOnlyPasswordHashField)
+
+
+class UserModelTests(TestCase):
+	def test_japanese_full_name_uses_last_name_first(self):
+		user = User(username="name-user", first_name="太郎", last_name="山田")
+
+		self.assertEqual(user.japanese_full_name(), "山田 太郎")
+
+	def test_japanese_full_name_handles_partial_names(self):
+		user = User(username="partial-user", first_name="太郎", last_name="")
+
+		self.assertEqual(user.japanese_full_name(), "太郎")
